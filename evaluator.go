@@ -77,7 +77,7 @@ type QueryRaw struct {
 
 type Query QueryRaw
 
-func (q Query) Evaluate(i interface{}) bool {
+func (q *Query) Evaluate(i interface{}) bool {
 	if q.Expression != nil {
 		return q.Expression.Evaluate(i)
 	}
