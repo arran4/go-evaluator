@@ -1,3 +1,8 @@
+// Package evaluator provides a simple expression language for querying Go
+// structs. Expressions are represented as Go structs which can be evaluated
+// against arbitrary values or composed together using logical operators. The
+// package also supports marshaling and unmarshaling expressions to and from
+// JSON for storage or transmission.
 package evaluator
 
 import (
@@ -8,10 +13,14 @@ import (
 	"strings"
 )
 
+// Expression represents a single boolean expression that can be evaluated
+// against a struct value.
 type Expression interface {
+	// Evaluate returns true if the expression matches the supplied value.
 	Evaluate(i interface{}) bool
 }
 
+// ContainsExpression checks whether a slice field contains the given Value.
 type ContainsExpression struct {
 	Field string
 	Value interface{}
@@ -41,6 +50,7 @@ func (e ContainsExpression) Evaluate(i interface{}) bool {
 	return false
 }
 
+// IsNotExpression succeeds when the specified Field does not equal Value.
 type IsNotExpression struct {
 	Field string
 	Value interface{}
@@ -55,6 +65,7 @@ func (e IsNotExpression) Evaluate(i interface{}) bool {
 	return !reflect.DeepEqual(f.Interface(), e.Value)
 }
 
+// IsExpression succeeds when the specified Field equals Value.
 type IsExpression struct {
 	Field string
 	Value interface{}
@@ -77,6 +88,7 @@ func (e IsExpression) Evaluate(i interface{}) bool {
 	return reflect.DeepEqual(f.Interface(), e.Value)
 }
 
+// AndExpression evaluates to true only if all child Expressions do as well.
 type AndExpression struct {
 	Expressions []Query `json:"Expressions"`
 }
@@ -90,6 +102,7 @@ func (e AndExpression) Evaluate(i interface{}) bool {
 	return true
 }
 
+// OrExpression evaluates to true if any of the child Expressions do.
 type OrExpression struct {
 	Expressions []Query `json:"Expressions"`
 }
@@ -103,6 +116,7 @@ func (e OrExpression) Evaluate(i interface{}) bool {
 	return false
 }
 
+// NotExpression inverts the result of a single child Expression.
 type NotExpression struct {
 	Expression Query `json:"Expression"`
 }
@@ -165,6 +179,8 @@ func stringValue(v interface{}) string {
 	}
 }
 
+// GreaterThanExpression compares Field to Value and succeeds when the field is
+// greater than the provided value.
 type GreaterThanExpression struct {
 	Field string
 	Value interface{}
@@ -203,6 +219,8 @@ func (e GreaterThanExpression) Evaluate(i interface{}) bool {
 	}
 }
 
+// GreaterThanOrEqualExpression succeeds when Field is greater than or equal to
+// Value.
 type GreaterThanOrEqualExpression struct {
 	Field string
 	Value interface{}
@@ -241,6 +259,7 @@ func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 	}
 }
 
+// LessThanExpression succeeds when Field is strictly less than Value.
 type LessThanExpression struct {
 	Field string
 	Value interface{}
@@ -279,6 +298,7 @@ func (e LessThanExpression) Evaluate(i interface{}) bool {
 	}
 }
 
+// LessThanOrEqualExpression succeeds when Field is less than or equal to Value.
 type LessThanOrEqualExpression struct {
 	Field string
 	Value interface{}
@@ -317,11 +337,14 @@ func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
 	}
 }
 
+// QueryRaw is the JSON representation of a query. ExpressionRawJson stores the
+// raw JSON for the underlying expression and is resolved during unmarshalling.
 type QueryRaw struct {
 	Expression        Expression      `json:"-"`
 	ExpressionRawJson json.RawMessage `json:"Expression"`
 }
 
+// Query wraps QueryRaw and provides evaluation and JSON unmarshalling helpers.
 type Query QueryRaw
 
 func (q *Query) Evaluate(i interface{}) bool {
