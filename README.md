@@ -82,3 +82,8 @@ creates a new repository containing only the evaluator history.
 ./extract_evaluator.sh ../evaluator-repo
 ```
 
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
