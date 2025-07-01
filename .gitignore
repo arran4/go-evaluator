@@ -1,0 +1,26 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary and coverage reports
+*.test
+*.out
+coverage.*
+
+# Build output
+bin/
+build/
+dist/
+
+# Vendor directory
+vendor/
+
+# IDE/editor directories and files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
