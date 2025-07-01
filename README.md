@@ -73,12 +73,8 @@ evaluator.Query{Expression: &evaluator.NotExpression{Expression: evaluator.Query
 
 Run `go test ./...` to execute the unit tests.
 
-## Extracting the Package
 
-A helper script `extract_evaluator.sh` is provided in the repository root. It
-creates a new repository containing only the evaluator history.
+## License
 
-```sh
-./extract_evaluator.sh ../evaluator-repo
-```
+This project is licensed under the [MIT License](LICENSE).
 
