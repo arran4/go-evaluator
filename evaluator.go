@@ -8,6 +8,18 @@ import (
 	"strings"
 )
 
+func derefStructPtr(i interface{}) (reflect.Value, bool) {
+	v := reflect.ValueOf(i)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return reflect.Value{}, false
+	}
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return reflect.Value{}, false
+	}
+	return v, true
+}
+
 type Expression interface {
 	Evaluate(i interface{}) bool
 }
@@ -18,8 +30,11 @@ type ContainsExpression struct {
 }
 
 func (e ContainsExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}
@@ -47,8 +62,11 @@ type IsNotExpression struct {
 }
 
 func (e IsNotExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}
@@ -61,8 +79,11 @@ type IsExpression struct {
 }
 
 func (e IsExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}
@@ -171,8 +192,11 @@ type GreaterThanExpression struct {
 }
 
 func (e GreaterThanExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}
@@ -209,8 +233,11 @@ type GreaterThanOrEqualExpression struct {
 }
 
 func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}
@@ -247,8 +274,11 @@ type LessThanExpression struct {
 }
 
 func (e LessThanExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}
@@ -285,8 +315,11 @@ type LessThanOrEqualExpression struct {
 }
 
 func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
-	v := reflect.ValueOf(i)
-	f := v.Elem().FieldByName(e.Field)
+	v, ok := derefStructPtr(i)
+	if !ok {
+		return false
+	}
+	f := v.FieldByName(e.Field)
 	if !f.IsValid() {
 		return false
 	}

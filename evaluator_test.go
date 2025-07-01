@@ -91,6 +91,16 @@ func TestLogicalExpressions(t *testing.T) {
 	}
 }
 
+func TestNonPointerInput(t *testing.T) {
+	u := testUser{Tags: []string{"a"}, Name: "bob"}
+	if (ContainsExpression{Field: "Tags", Value: "a"}).Evaluate(u) {
+		t.Errorf("expected false for non-pointer input")
+	}
+	if (IsExpression{Field: "Name", Value: "bob"}).Evaluate(u) {
+		t.Errorf("expected false for non-pointer input")
+	}
+}
+
 func TestQueryUnmarshalAndEvaluate(t *testing.T) {
 	js := `{
         "Expression": {
