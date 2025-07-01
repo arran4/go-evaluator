@@ -72,3 +72,9 @@ evaluator.Query{Expression: &evaluator.NotExpression{Expression: evaluator.Query
 ## Running Tests
 
 Run `go test ./...` to execute the unit tests.
+
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
