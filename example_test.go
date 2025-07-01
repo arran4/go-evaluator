@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/arran4/arrannetau/evaluator"
+	"github.com/arran4/go-evaluator"
 )
 
 // Example demonstrating manual construction of a query and evaluation.
