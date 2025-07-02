@@ -1,0 +1,53 @@
+project_name: go-evaluator
+release:
+  github:
+    owner: arran4
+    name: go-evaluator
+builds:
+  - id: csvfilter
+    main: ./cmd/csvfilter
+    binary: csvfilter
+  - id: jsonlfilter
+    main: ./cmd/jsonlfilter
+    binary: jsonlfilter
+  - id: jsontest
+    main: ./cmd/jsontest
+    binary: jsontest
+  - id: yamltest
+    main: ./cmd/yamltest
+    binary: yamltest
+archives:
+  - id: csvfilter
+    builds: [csvfilter]
+  - id: jsonlfilter
+    builds: [jsonlfilter]
+  - id: jsontest
+    builds: [jsontest]
+  - id: yamltest
+    builds: [yamltest]
+
+brews:
+  - tap:
+      owner: arran4
+      name: homebrew-tap
+    ids: [csvfilter, jsonlfilter, jsontest, yamltest]
+
+nfpms:
+  - package_name: "{{ .ProjectName }}-{{ .Build.ID }}"
+    formats: [deb, rpm]
+
+snapcrafts:
+  - name_template: "{{ .ProjectName }}-{{ .Build.ID }}"
+    builds: [csvfilter, jsonlfilter, jsontest, yamltest]
+
+gofish:
+  tap:
+    owner: arran4
+    name: fish-food
+  ids: [csvfilter, jsonlfilter, jsontest, yamltest]
+
+scoop:
+  bucket:
+    owner: arran4
+    name: scoop-bucket
+  ids: [csvfilter, jsonlfilter, jsontest, yamltest]
