@@ -13,16 +13,49 @@ import (
 	"strings"
 )
 
-func derefStructPtr(i interface{}) (reflect.Value, bool) {
+// derefValue dereferences pointer inputs and returns the underlying value.
+// It supports structs and maps and returns false for all other types.
+func derefValue(i interface{}) (reflect.Value, bool) {
 	v := reflect.ValueOf(i)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return reflect.Value{}, false
+		}
+		v = v.Elem()
+	} else if v.Kind() == reflect.Struct {
+		// maintain backward behaviour: require pointer for structs
 		return reflect.Value{}, false
 	}
-	v = v.Elem()
-	if v.Kind() != reflect.Struct {
+	switch v.Kind() {
+	case reflect.Struct, reflect.Map:
+		return v, true
+	default:
 		return reflect.Value{}, false
 	}
-	return v, true
+}
+
+// getField retrieves a field value from either a struct or map value.
+// For structs it uses FieldByName, while for maps it looks up the key by name.
+func getField(v reflect.Value, name string) (reflect.Value, bool) {
+	switch v.Kind() {
+	case reflect.Struct:
+		f := v.FieldByName(name)
+		if f.IsValid() {
+			return f, true
+		}
+		return reflect.Value{}, false
+	case reflect.Map:
+		key := reflect.ValueOf(name)
+		if key.Type().AssignableTo(v.Type().Key()) {
+			f := v.MapIndex(key)
+			if f.IsValid() {
+				return f, true
+			}
+		}
+		return reflect.Value{}, false
+	default:
+		return reflect.Value{}, false
+	}
 }
 
 // Expression represents a single boolean expression that can be evaluated
@@ -39,12 +72,12 @@ type ContainsExpression struct {
 }
 
 func (e ContainsExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	if f.Type().Kind() != reflect.Slice {
@@ -72,12 +105,12 @@ type IsNotExpression struct {
 }
 
 func (e IsNotExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	return !reflect.DeepEqual(f.Interface(), e.Value)
@@ -90,12 +123,12 @@ type IsExpression struct {
 }
 
 func (e IsExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	if e.Value == nil {
@@ -208,12 +241,12 @@ type GreaterThanExpression struct {
 }
 
 func (e GreaterThanExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	switch f.Kind() {
@@ -251,12 +284,12 @@ type GreaterThanOrEqualExpression struct {
 }
 
 func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	switch f.Kind() {
@@ -293,12 +326,12 @@ type LessThanExpression struct {
 }
 
 func (e LessThanExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	switch f.Kind() {
@@ -335,12 +368,12 @@ type LessThanOrEqualExpression struct {
 }
 
 func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
-	v, ok := derefStructPtr(i)
+	v, ok := derefValue(i)
 	if !ok {
 		return false
 	}
-	f := v.FieldByName(e.Field)
-	if !f.IsValid() {
+	f, ok := getField(v, e.Field)
+	if !ok {
 		return false
 	}
 	switch f.Kind() {

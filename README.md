@@ -71,6 +71,27 @@ evaluator.Query{Expression: &evaluator.NotExpression{Expression: evaluator.Query
 }}}
 ```
 
+## Command-line Tools
+
+The project includes small utilities for working with common data formats.
+
+- **csvfilter** – filters CSV rows. Usage:
+  `csvfilter -e '<expression>' [file ...]`
+  When no files are specified, input is read from standard input.
+- **jsonlfilter** – filters newline-delimited JSON records. It accepts the same
+  arguments as `csvfilter` and writes matching JSON objects to standard output.
+- **jsontest** – evaluates a single JSON document. It exits with status 0 if the
+  expression matches and 1 otherwise. Multiple files can be supplied and all
+  must satisfy the expression. With no files it reads from standard input.
+- **yamltest** – like `jsontest` but for YAML documents.
+
+Expressions use the simple syntax implemented by the parser in
+`parser/simple`. For example:
+
+```bash
+jsonlfilter -e 'GT(age,30) and Is(country,"US")' users.jsonl
+```
+
 ## Running Tests
 
 Run `go test ./...` to execute the unit tests.
