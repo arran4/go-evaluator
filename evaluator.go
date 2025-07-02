@@ -324,6 +324,146 @@ type QueryRaw struct {
 
 type Query QueryRaw
 
+// typedExpression couples an Expression value with a Type field
+// so it can be marshaled and unmarshaled in a generic fashion.
+// The Expression field is strongly typed using generics.
+type typedExpression[E Expression] struct {
+	Type       string `json:"Type"`
+	Expression E      `json:"Expression"`
+}
+
+// marshalExpression serializes any Expression along with its type
+// indicator using typedExpression.
+func marshalExpression(e Expression) ([]byte, error) {
+	switch expr := e.(type) {
+	case *ContainsExpression:
+		return json.Marshal(typedExpression[*ContainsExpression]{
+			Type:       "Contains",
+			Expression: expr,
+		})
+	case *IsNotExpression:
+		return json.Marshal(typedExpression[*IsNotExpression]{
+			Type:       "IsNot",
+			Expression: expr,
+		})
+	case *IsExpression:
+		return json.Marshal(typedExpression[*IsExpression]{
+			Type:       "Is",
+			Expression: expr,
+		})
+	case *AndExpression:
+		return json.Marshal(typedExpression[*AndExpression]{
+			Type:       "And",
+			Expression: expr,
+		})
+	case *OrExpression:
+		return json.Marshal(typedExpression[*OrExpression]{
+			Type:       "Or",
+			Expression: expr,
+		})
+	case *NotExpression:
+		return json.Marshal(typedExpression[*NotExpression]{
+			Type:       "Not",
+			Expression: expr,
+		})
+	case *GreaterThanExpression:
+		return json.Marshal(typedExpression[*GreaterThanExpression]{
+			Type:       "GT",
+			Expression: expr,
+		})
+	case *GreaterThanOrEqualExpression:
+		return json.Marshal(typedExpression[*GreaterThanOrEqualExpression]{
+			Type:       "GTE",
+			Expression: expr,
+		})
+	case *LessThanExpression:
+		return json.Marshal(typedExpression[*LessThanExpression]{
+			Type:       "LT",
+			Expression: expr,
+		})
+	case *LessThanOrEqualExpression:
+		return json.Marshal(typedExpression[*LessThanOrEqualExpression]{
+			Type:       "LTE",
+			Expression: expr,
+		})
+	default:
+		return nil, fmt.Errorf("unknown expression type %T", e)
+	}
+}
+
+// unmarshalExpression decodes json data containing a typedExpression and
+// returns the underlying Expression.
+func unmarshalExpression(data []byte) (Expression, error) {
+	var hdr struct{ Type string }
+	if err := json.Unmarshal(data, &hdr); err != nil {
+		return nil, err
+	}
+	switch hdr.Type {
+	case "Contains":
+		var te typedExpression[*ContainsExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "IsNot":
+		var te typedExpression[*IsNotExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "Is":
+		var te typedExpression[*IsExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "And":
+		var te typedExpression[*AndExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "Or":
+		var te typedExpression[*OrExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "Not":
+		var te typedExpression[*NotExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "GT":
+		var te typedExpression[*GreaterThanExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "GTE":
+		var te typedExpression[*GreaterThanOrEqualExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "LT":
+		var te typedExpression[*LessThanExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "LTE":
+		var te typedExpression[*LessThanOrEqualExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	default:
+		return nil, fmt.Errorf("unrecognized type value %q", hdr.Type)
+	}
+}
+
 func (q *Query) Evaluate(i interface{}) bool {
 	if q.Expression != nil {
 		return q.Expression.Evaluate(i)
@@ -335,50 +475,24 @@ func (q *Query) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, (*QueryRaw)(q)); err != nil {
 		return err
 	}
-	typeStruct := struct {
-		Type string
-	}{}
-	if err := json.Unmarshal(q.ExpressionRawJson, &typeStruct); err != nil {
-		return err
+	if len(q.ExpressionRawJson) == 0 {
+		return nil
 	}
-	edata := []byte(q.ExpressionRawJson)
-	var err error = nil
-	switch typeStruct.Type {
-	case "Contains":
-		q.Expression = &ContainsExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "IsNot":
-		q.Expression = &IsNotExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "Is":
-		q.Expression = &IsExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "And":
-		q.Expression = &AndExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "Or":
-		q.Expression = &OrExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "Not":
-		q.Expression = &NotExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "GT":
-		q.Expression = &GreaterThanExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "GTE":
-		q.Expression = &GreaterThanOrEqualExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "LT":
-		q.Expression = &LessThanExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	case "LTE":
-		q.Expression = &LessThanOrEqualExpression{}
-		err = json.Unmarshal(edata, q.Expression)
-	default:
-		err = fmt.Errorf("unrecognized type value %q", typeStruct.Type)
-	}
+	expr, err := unmarshalExpression(q.ExpressionRawJson)
 	if err != nil {
 		return err
 	}
+	q.Expression = expr
 	return nil
+}
+
+func (q Query) MarshalJSON() ([]byte, error) {
+	if q.Expression != nil {
+		data, err := marshalExpression(q.Expression)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(&QueryRaw{ExpressionRawJson: data})
+	}
+	return json.Marshal(&QueryRaw{ExpressionRawJson: q.ExpressionRawJson})
 }

@@ -38,8 +38,10 @@ files or network APIs.
 js := `{
   "Expression": {
     "Type": "Contains",
-    "Field": "Tags",
-    "Value": "go"
+    "Expression": {
+      "Field": "Tags",
+      "Value": "go"
+    }
   }
 }`
 var q evaluator.Query
