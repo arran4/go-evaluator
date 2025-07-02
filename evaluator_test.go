@@ -105,10 +105,12 @@ func TestQueryUnmarshalAndEvaluate(t *testing.T) {
 	js := `{
         "Expression": {
             "Type": "And",
-            "Expressions": [
-                {"Expression": {"Type": "Is", "Field": "Name", "Value": "bob"}},
-                {"Expression": {"Type": "GT", "Field": "Age", "Value": 30}}
-            ]
+            "Expression": {
+                "Expressions": [
+                    {"Expression": {"Type": "Is", "Expression": {"Field": "Name", "Value": "bob"}}},
+                    {"Expression": {"Type": "GT", "Expression": {"Field": "Age", "Value": 30}}}
+                ]
+            }
         }
     }`
 	var q Query
@@ -125,8 +127,10 @@ func TestQueryUnmarshalStringCompare(t *testing.T) {
 	js := `{
         "Expression": {
             "Type": "LT",
-            "Field": "Name",
-            "Value": "d"
+            "Expression": {
+                "Field": "Name",
+                "Value": "d"
+            }
         }
     }`
 	var q Query
@@ -136,5 +140,42 @@ func TestQueryUnmarshalStringCompare(t *testing.T) {
 	u := &testUser{Name: "bob"}
 	if !q.Evaluate(u) {
 		t.Errorf("string comparison in query failed")
+	}
+}
+func TestQueryMarshalRoundTrip(t *testing.T) {
+	q := Query{Expression: &AndExpression{Expressions: []Query{
+		{Expression: &IsExpression{Field: "Name", Value: "bob"}},
+		{Expression: &GreaterThanExpression{Field: "Age", Value: 30}},
+	}}}
+	b1, err := json.Marshal(q)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var q2 Query
+	if err := json.Unmarshal(b1, &q2); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	b2, err := json.Marshal(q2)
+	if err != nil {
+		t.Fatalf("marshal2: %v", err)
+	}
+	if string(b1) != string(b2) {
+		t.Errorf("round trip json mismatch\norig: %s\nback: %s", b1, b2)
+	}
+}
+
+func TestQueryMarshalEvaluate(t *testing.T) {
+	q := Query{Expression: &NotExpression{Expression: Query{Expression: &IsExpression{Field: "Name", Value: "alice"}}}}
+	b, err := json.Marshal(q)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var q2 Query
+	if err := json.Unmarshal(b, &q2); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	u := &testUser{Name: "bob"}
+	if q.Evaluate(u) != q2.Evaluate(u) {
+		t.Errorf("evaluation mismatch after round trip")
 	}
 }
