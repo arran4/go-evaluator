@@ -13,6 +13,92 @@ import (
 	"strings"
 )
 
+// number represents any built-in numeric type.
+type number interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+		~float32 | ~float64
+}
+
+// numeric converts v into the requested numeric type if possible.
+func numeric[T number](v interface{}) (T, bool) {
+	var zero T
+	switch n := v.(type) {
+	case int:
+		return T(n), true
+	case int8:
+		return T(n), true
+	case int16:
+		return T(n), true
+	case int32:
+		return T(n), true
+	case int64:
+		return T(n), true
+	case uint:
+		return T(n), true
+	case uint8:
+		return T(n), true
+	case uint16:
+		return T(n), true
+	case uint32:
+		return T(n), true
+	case uint64:
+		return T(n), true
+	case uintptr:
+		return T(n), true
+	case float32:
+		return T(n), true
+	case float64:
+		return T(n), true
+	case json.Number:
+		f, err := n.Float64()
+		if err == nil {
+			return T(f), true
+		}
+		return zero, false
+	case string:
+		f, err := strconv.ParseFloat(n, 64)
+		if err == nil {
+			return T(f), true
+		}
+		return zero, false
+	default:
+		return zero, false
+	}
+}
+
+func greater[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f > n
+}
+
+func greaterOrEqual[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f >= n
+}
+
+func less[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f < n
+}
+
+func lessOrEqual[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f <= n
+}
+
 // derefValue dereferences pointer inputs and returns the underlying value.
 // It supports structs and maps and returns false for all other types.
 func derefValue(i interface{}) (reflect.Value, bool) {
@@ -251,23 +337,11 @@ func (e GreaterThanExpression) Evaluate(i interface{}) bool {
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Int()) > v
+		return greater[int64](f.Int(), e.Value)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Uint()) > v
+		return greater[uint64](f.Uint(), e.Value)
 	case reflect.Float32, reflect.Float64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return f.Float() > v
+		return greater[float64](f.Float(), e.Value)
 	case reflect.String:
 		sval := stringValue(e.Value)
 		return strings.Compare(f.String(), sval) > 0
@@ -294,23 +368,11 @@ func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Int()) >= v
+		return greaterOrEqual[int64](f.Int(), e.Value)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Uint()) >= v
+		return greaterOrEqual[uint64](f.Uint(), e.Value)
 	case reflect.Float32, reflect.Float64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return f.Float() >= v
+		return greaterOrEqual[float64](f.Float(), e.Value)
 	case reflect.String:
 		sval := stringValue(e.Value)
 		return strings.Compare(f.String(), sval) >= 0
@@ -336,23 +398,11 @@ func (e LessThanExpression) Evaluate(i interface{}) bool {
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Int()) < v
+		return less[int64](f.Int(), e.Value)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Uint()) < v
+		return less[uint64](f.Uint(), e.Value)
 	case reflect.Float32, reflect.Float64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return f.Float() < v
+		return less[float64](f.Float(), e.Value)
 	case reflect.String:
 		sval := stringValue(e.Value)
 		return strings.Compare(f.String(), sval) < 0
@@ -378,23 +428,11 @@ func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Int()) <= v
+		return lessOrEqual[int64](f.Int(), e.Value)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return float64(f.Uint()) <= v
+		return lessOrEqual[uint64](f.Uint(), e.Value)
 	case reflect.Float32, reflect.Float64:
-		v, ok := numericValue(e.Value)
-		if !ok {
-			return false
-		}
-		return f.Float() <= v
+		return lessOrEqual[float64](f.Float(), e.Value)
 	case reflect.String:
 		sval := stringValue(e.Value)
 		return strings.Compare(f.String(), sval) <= 0
