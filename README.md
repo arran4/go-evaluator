@@ -54,6 +54,61 @@ q := evaluator.Query{
 matched := q.Evaluate(&User{Name: "bob", Age: 35})
 ```
 
+## Integration Example
+
+This example demonstrates how to integrate the evaluator into an application to
+filter a list of structs based on a dynamic query string (e.g., from user input).
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/arran4/go-evaluator/parser/simple"
+)
+
+type Product struct {
+	Name     string
+	Category string
+	Price    float64
+	InStock  bool
+}
+
+func main() {
+	// 1. Data source
+	products := []Product{
+		{"Laptop", "Electronics", 999.99, true},
+		{"Coffee Mug", "Kitchen", 12.50, true},
+		{"Headphones", "Electronics", 49.99, false},
+	}
+
+	// 2. Query (could come from user input, API, config, etc.)
+	// Find all Electronics under $1000
+	queryString := `Category is "Electronics" and Price < 1000`
+
+	// 3. Parse the query
+	query, err := simple.Parse(queryString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 4. Filter the list
+	var filtered []Product
+	for _, p := range products {
+		if query.Evaluate(&p) {
+			filtered = append(filtered, p)
+		}
+	}
+
+	// 5. Use results
+	for _, p := range filtered {
+		fmt.Printf("Found: %s ($%.2f)\n", p.Name, p.Price)
+	}
+}
+```
+
 ## JSON Queries
 
 Queries can be marshalled to and from JSON. This is handy for configuration
