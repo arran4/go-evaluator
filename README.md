@@ -5,6 +5,23 @@ structs. Expressions are represented as Go structs that can be combined using
 logical operators. Comparison expressions support both numeric and string
 values.
 
+## Installation
+
+To use the library in your Go project:
+
+```bash
+go get github.com/arran4/go-evaluator
+```
+
+To install the command-line tools:
+
+```bash
+go install github.com/arran4/go-evaluator/cmd/csvfilter@latest
+go install github.com/arran4/go-evaluator/cmd/jsonlfilter@latest
+go install github.com/arran4/go-evaluator/cmd/jsontest@latest
+go install github.com/arran4/go-evaluator/cmd/yamltest@latest
+```
+
 ## Features
 
 - Equality and inequality checks (`Is`, `IsNot`)
