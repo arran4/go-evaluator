@@ -5,6 +5,14 @@ structs. Expressions are represented as Go structs that can be combined using
 logical operators. Comparison expressions support both numeric and string
 values.
 
+## Why use this?
+
+The Evaluator library allows you to:
+- **Dynamic Filtering**: Define filtering logic at runtime (e.g., from configuration files or user input) rather than hardcoding it.
+- **Safe Querying**: Expose a simple, safe query capability to end-users without exposing full SQL or code execution.
+- **Portability**: Serialize queries to JSON to store them in a database or send them over a network.
+- **Type Safety**: Works with standard Go structs and types.
+
 ## Installation
 
 To use the library in your Go project:
@@ -88,33 +96,86 @@ evaluator.Query{Expression: &evaluator.NotExpression{Expression: evaluator.Query
 }}}
 ```
 
+## CLI Usage & Syntax
+
+The command-line tools use a simple string syntax to define expressions.
+
+**Operators:**
+- `is`, `is not`: Equality checks
+- `>`, `>=`, `<`, `<=`: Numeric/Lexical comparison
+- `contains`: Checks if a list contains a value
+- `and`, `or`, `not`: Logical operators
+- `(...)`: Grouping
+
+**Values:**
+- Strings: `"value"`
+- Numbers: `123`, `45.67`
+- Booleans: `true`, `false`
+
+**Examples:**
+- `Status is "active"`
+- `Age >= 18`
+- `Tags contains "admin"`
+- `(Role is "admin" or Role is "moderator") and Active is true`
+
 ## Command-line Tools
 
 The project includes small utilities for working with common data formats.
 
-- **csvfilter** – filters CSV rows. Usage:
-  `csvfilter -e '<expression>' [file ...]`
-  When no files are specified, input is read from standard input.
-- **jsonlfilter** – filters newline-delimited JSON records. It accepts the same
-  arguments as `csvfilter` and writes matching JSON objects to standard output.
-- **jsontest** – evaluates a single JSON document. It exits with status 0 if the
-  expression matches and 1 otherwise. Multiple files can be supplied and all
-  must satisfy the expression. With no files it reads from standard input.
-- **yamltest** – like `jsontest` but for YAML documents.
+### csvfilter
+Filters CSV rows based on headers.
 
-Expressions use the simple syntax implemented by the parser in
-`parser/simple`. For example:
-
+**Usage:**
 ```bash
-jsonlfilter -e 'GT(age,30) and Is(country,"US")' users.jsonl
+# Given data.csv:
+# name,age,city
+# alice,30,ny
+# bob,25,sf
+
+csvfilter -e 'age > 28' data.csv
+# Output:
+# name,age,city
+# alice,30,ny
+```
+
+### jsonlfilter
+Filters newline-delimited JSON records.
+
+**Usage:**
+```bash
+# Given logs.jsonl:
+# {"level":"info", "msg":"started"}
+# {"level":"error", "msg":"failed"}
+
+jsonlfilter -e 'level is "error"' logs.jsonl
+# Output:
+# {"level":"error", "msg":"failed"}
+```
+
+### jsontest
+Evaluates a single JSON document (or multiple files). Returns exit code 0 on match, 1 otherwise.
+
+**Usage:**
+```bash
+# Check if config.json is valid for production
+jsontest -e 'environment is "production" and debug is false' config.json
+if [ $? -eq 0 ]; then
+    echo "Production ready"
+fi
+```
+
+### yamltest
+Like `jsontest` but for YAML documents.
+
+**Usage:**
+```bash
+yamltest -e 'replicas >= 3' deployment.yaml
 ```
 
 ## Running Tests
 
 Run `go test ./...` to execute the unit tests.
 
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
