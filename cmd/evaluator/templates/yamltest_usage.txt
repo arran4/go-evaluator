@@ -1,0 +1,7 @@
+Usage: evaluator yamltest [files...] <subcommand> [arguments]
+
+Flags:
+    -e string        Expression
+
+Positional Arguments:
+    files      Files
