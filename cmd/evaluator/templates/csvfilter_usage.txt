@@ -1,0 +1,7 @@
+Usage: evaluator csvfilter [files...] <subcommand> [arguments]
+
+Flags:
+    -e string        Expression
+
+Positional Arguments:
+    files      Files

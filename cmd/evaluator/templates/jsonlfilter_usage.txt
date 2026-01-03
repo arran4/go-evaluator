@@ -1,0 +1,7 @@
+Usage: evaluator jsonlfilter [files...] <subcommand> [arguments]
+
+Flags:
+    -e string        Expression
+
+Positional Arguments:
+    files      Files

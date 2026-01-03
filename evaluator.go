@@ -63,6 +63,17 @@ func numeric[T number](v interface{}) (T, bool) {
 		}
 		return zero, false
 	default:
+		// Attempt reflection for other numeric types that might not match exact types in switch
+		// e.g. int vs int64 mismatches if T is int64 but v is int
+		val := reflect.ValueOf(v)
+		switch val.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return T(val.Int()), true
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			return T(val.Uint()), true
+		case reflect.Float32, reflect.Float64:
+			return T(val.Float()), true
+		}
 		return zero, false
 	}
 }
@@ -135,6 +146,11 @@ func getField(v reflect.Value, name string) (reflect.Value, bool) {
 		if key.Type().AssignableTo(v.Type().Key()) {
 			f := v.MapIndex(key)
 			if f.IsValid() {
+				// If the map value is an interface, we need to extract the underlying value
+				// to get the correct Kind() for comparison.
+				if f.Kind() == reflect.Interface {
+					return f.Elem(), true
+				}
 				return f, true
 			}
 		}
