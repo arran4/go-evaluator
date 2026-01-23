@@ -34,20 +34,20 @@ func TestIsAndIsNot(t *testing.T) {
 
 func TestComparisons(t *testing.T) {
 	u := &testUser{Age: 40, Score: 4.5}
-	if !(GreaterThanExpression{Field: "Age", Value: 30}.Evaluate(u)) {
+	if !((&GreaterThanExpression{Field: "Age", Value: 30}).Evaluate(u)) {
 		t.Errorf("gt failed")
 	}
-	if !(GreaterThanOrEqualExpression{Field: "Age", Value: 40}.Evaluate(u)) {
+	if !((&GreaterThanOrEqualExpression{Field: "Age", Value: 40}).Evaluate(u)) {
 		t.Errorf("gte failed")
 	}
-	if !(LessThanExpression{Field: "Score", Value: 5}.Evaluate(u)) {
+	if !((&LessThanExpression{Field: "Score", Value: 5}).Evaluate(u)) {
 		t.Errorf("lt failed")
 	}
-	if !(LessThanOrEqualExpression{Field: "Score", Value: 4.5}.Evaluate(u)) {
+	if !((&LessThanOrEqualExpression{Field: "Score", Value: 4.5}).Evaluate(u)) {
 		t.Errorf("lte failed")
 	}
 
-	if (GreaterThanExpression{Field: "Missing", Value: 1}.Evaluate(u)) {
+	if ((&GreaterThanExpression{Field: "Missing", Value: 1}).Evaluate(u)) {
 		t.Errorf("gt missing field should be false")
 	}
 }
@@ -55,16 +55,16 @@ func TestComparisons(t *testing.T) {
 func TestStringComparisons(t *testing.T) {
 	u := &testUser{Name: "bob"}
 
-	if !(GreaterThanExpression{Field: "Name", Value: "ann"}.Evaluate(u)) {
+	if !((&GreaterThanExpression{Field: "Name", Value: "ann"}).Evaluate(u)) {
 		t.Errorf("gt string failed")
 	}
-	if !(GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}.Evaluate(u)) {
+	if !((&GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u)) {
 		t.Errorf("gte string failed")
 	}
-	if !(LessThanExpression{Field: "Name", Value: "carol"}.Evaluate(u)) {
+	if !((&LessThanExpression{Field: "Name", Value: "carol"}).Evaluate(u)) {
 		t.Errorf("lt string failed")
 	}
-	if !(LessThanOrEqualExpression{Field: "Name", Value: "bob"}.Evaluate(u)) {
+	if !((&LessThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u)) {
 		t.Errorf("lte string failed")
 	}
 }

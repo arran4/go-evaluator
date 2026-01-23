@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync/atomic"
+	"unsafe"
 )
 
 // number represents any built-in numeric type.
@@ -340,9 +342,10 @@ func stringValue(v interface{}) string {
 type GreaterThanExpression struct {
 	Field string
 	Value interface{}
+	sVal  unsafe.Pointer // *string
 }
 
-func (e GreaterThanExpression) Evaluate(i interface{}) bool {
+func (e *GreaterThanExpression) Evaluate(i interface{}) bool {
 	v, ok := derefValue(i)
 	if !ok {
 		return false
@@ -359,7 +362,17 @@ func (e GreaterThanExpression) Evaluate(i interface{}) bool {
 	case reflect.Float32, reflect.Float64:
 		return greater[float64](f.Float(), e.Value)
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) > 0
+		}
+		var sval string
+		ptr := atomic.LoadPointer(&e.sVal)
+		if ptr != nil {
+			sval = *(*string)(ptr)
+		} else {
+			sval = stringValue(e.Value)
+			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+		}
 		return strings.Compare(f.String(), sval) > 0
 	default:
 		return false
@@ -371,9 +384,10 @@ func (e GreaterThanExpression) Evaluate(i interface{}) bool {
 type GreaterThanOrEqualExpression struct {
 	Field string
 	Value interface{}
+	sVal  unsafe.Pointer // *string
 }
 
-func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
+func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 	v, ok := derefValue(i)
 	if !ok {
 		return false
@@ -390,7 +404,17 @@ func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 	case reflect.Float32, reflect.Float64:
 		return greaterOrEqual[float64](f.Float(), e.Value)
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) >= 0
+		}
+		var sval string
+		ptr := atomic.LoadPointer(&e.sVal)
+		if ptr != nil {
+			sval = *(*string)(ptr)
+		} else {
+			sval = stringValue(e.Value)
+			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+		}
 		return strings.Compare(f.String(), sval) >= 0
 	default:
 		return false
@@ -401,9 +425,10 @@ func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 type LessThanExpression struct {
 	Field string
 	Value interface{}
+	sVal  unsafe.Pointer // *string
 }
 
-func (e LessThanExpression) Evaluate(i interface{}) bool {
+func (e *LessThanExpression) Evaluate(i interface{}) bool {
 	v, ok := derefValue(i)
 	if !ok {
 		return false
@@ -420,7 +445,17 @@ func (e LessThanExpression) Evaluate(i interface{}) bool {
 	case reflect.Float32, reflect.Float64:
 		return less[float64](f.Float(), e.Value)
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) < 0
+		}
+		var sval string
+		ptr := atomic.LoadPointer(&e.sVal)
+		if ptr != nil {
+			sval = *(*string)(ptr)
+		} else {
+			sval = stringValue(e.Value)
+			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+		}
 		return strings.Compare(f.String(), sval) < 0
 	default:
 		return false
@@ -431,9 +466,10 @@ func (e LessThanExpression) Evaluate(i interface{}) bool {
 type LessThanOrEqualExpression struct {
 	Field string
 	Value interface{}
+	sVal  unsafe.Pointer // *string
 }
 
-func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
+func (e *LessThanOrEqualExpression) Evaluate(i interface{}) bool {
 	v, ok := derefValue(i)
 	if !ok {
 		return false
@@ -450,7 +486,17 @@ func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
 	case reflect.Float32, reflect.Float64:
 		return lessOrEqual[float64](f.Float(), e.Value)
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) <= 0
+		}
+		var sval string
+		ptr := atomic.LoadPointer(&e.sVal)
+		if ptr != nil {
+			sval = *(*string)(ptr)
+		} else {
+			sval = stringValue(e.Value)
+			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+		}
 		return strings.Compare(f.String(), sval) <= 0
 	default:
 		return false
