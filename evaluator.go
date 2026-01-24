@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"unsafe"
 )
 
 // number represents any built-in numeric type.
@@ -342,7 +341,7 @@ func stringValue(v interface{}) string {
 type GreaterThanExpression struct {
 	Field string
 	Value interface{}
-	sVal  unsafe.Pointer // *string
+	sVal  atomic.Pointer[string]
 }
 
 func (e *GreaterThanExpression) Evaluate(i interface{}) bool {
@@ -366,12 +365,12 @@ func (e *GreaterThanExpression) Evaluate(i interface{}) bool {
 			return strings.Compare(f.String(), s) > 0
 		}
 		var sval string
-		ptr := atomic.LoadPointer(&e.sVal)
+		ptr := e.sVal.Load()
 		if ptr != nil {
-			sval = *(*string)(ptr)
+			sval = *ptr
 		} else {
 			sval = stringValue(e.Value)
-			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+			e.sVal.Store(&sval)
 		}
 		return strings.Compare(f.String(), sval) > 0
 	default:
@@ -384,7 +383,7 @@ func (e *GreaterThanExpression) Evaluate(i interface{}) bool {
 type GreaterThanOrEqualExpression struct {
 	Field string
 	Value interface{}
-	sVal  unsafe.Pointer // *string
+	sVal  atomic.Pointer[string]
 }
 
 func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
@@ -408,12 +407,12 @@ func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 			return strings.Compare(f.String(), s) >= 0
 		}
 		var sval string
-		ptr := atomic.LoadPointer(&e.sVal)
+		ptr := e.sVal.Load()
 		if ptr != nil {
-			sval = *(*string)(ptr)
+			sval = *ptr
 		} else {
 			sval = stringValue(e.Value)
-			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+			e.sVal.Store(&sval)
 		}
 		return strings.Compare(f.String(), sval) >= 0
 	default:
@@ -425,7 +424,7 @@ func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
 type LessThanExpression struct {
 	Field string
 	Value interface{}
-	sVal  unsafe.Pointer // *string
+	sVal  atomic.Pointer[string]
 }
 
 func (e *LessThanExpression) Evaluate(i interface{}) bool {
@@ -449,12 +448,12 @@ func (e *LessThanExpression) Evaluate(i interface{}) bool {
 			return strings.Compare(f.String(), s) < 0
 		}
 		var sval string
-		ptr := atomic.LoadPointer(&e.sVal)
+		ptr := e.sVal.Load()
 		if ptr != nil {
-			sval = *(*string)(ptr)
+			sval = *ptr
 		} else {
 			sval = stringValue(e.Value)
-			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+			e.sVal.Store(&sval)
 		}
 		return strings.Compare(f.String(), sval) < 0
 	default:
@@ -466,7 +465,7 @@ func (e *LessThanExpression) Evaluate(i interface{}) bool {
 type LessThanOrEqualExpression struct {
 	Field string
 	Value interface{}
-	sVal  unsafe.Pointer // *string
+	sVal  atomic.Pointer[string]
 }
 
 func (e *LessThanOrEqualExpression) Evaluate(i interface{}) bool {
@@ -490,12 +489,12 @@ func (e *LessThanOrEqualExpression) Evaluate(i interface{}) bool {
 			return strings.Compare(f.String(), s) <= 0
 		}
 		var sval string
-		ptr := atomic.LoadPointer(&e.sVal)
+		ptr := e.sVal.Load()
 		if ptr != nil {
-			sval = *(*string)(ptr)
+			sval = *ptr
 		} else {
 			sval = stringValue(e.Value)
-			atomic.StorePointer(&e.sVal, unsafe.Pointer(&sval))
+			e.sVal.Store(&sval)
 		}
 		return strings.Compare(f.String(), sval) <= 0
 	default:
