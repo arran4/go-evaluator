@@ -65,9 +65,9 @@ func main() {
 			log.Fatal(err)
 		}
 		if err := process(fh, os.Stdout, q); err != nil {
-			fh.Close()
+			_ = fh.Close()
 			log.Fatal(err)
 		}
-		fh.Close()
+		_ = fh.Close()
 	}
 }

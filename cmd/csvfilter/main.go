@@ -81,9 +81,9 @@ func main() {
 			log.Fatal(err)
 		}
 		if err := process(fh, q, &writeHeader); err != nil {
-			fh.Close()
+			_ = fh.Close()
 			log.Fatal(err)
 		}
-		fh.Close()
+		_ = fh.Close()
 	}
 }

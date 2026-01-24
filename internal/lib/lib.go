@@ -35,10 +35,10 @@ func CsvFilter(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		if err := processCSV(fh, os.Stdout, q, &writeHeader); err != nil {
-			fh.Close()
+			_ = fh.Close()
 			log.Fatal(err)
 		}
-		fh.Close()
+		_ = fh.Close()
 	}
 }
 
@@ -101,10 +101,10 @@ func JsonlFilter(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		if err := processJSONL(fh, q); err != nil {
-			fh.Close()
+			_ = fh.Close()
 			log.Fatal(err)
 		}
-		fh.Close()
+		_ = fh.Close()
 	}
 }
 
@@ -153,7 +153,7 @@ func JsonTest(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		ok, err := evaluateJSON(fh, q)
-		fh.Close()
+		_ = fh.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -197,7 +197,7 @@ func YamlTest(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		ok, err := evaluateYAML(fh, q)
-		fh.Close()
+		_ = fh.Close()
 		if err != nil {
 			log.Fatal(err)
 		}

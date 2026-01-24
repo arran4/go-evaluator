@@ -84,11 +84,11 @@ func TestProcess_Functional(t *testing.T) {
 	errChan := make(chan error, 1)
 	go func() {
 		errChan <- process(reader, q, &wh)
-		w.Close()
+		_ = w.Close()
 	}()
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout
 
 	if err := <-errChan; err != nil {

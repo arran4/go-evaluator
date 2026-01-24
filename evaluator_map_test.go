@@ -35,13 +35,13 @@ func TestMapNilValue(t *testing.T) {
 	}
 
 	// Check if IsExpression handles nil value in map correctly.
-    // If getField returns an invalid Value, IsExpression might panic when calling f.Kind().
+	// If getField returns an invalid Value, IsExpression might panic when calling f.Kind().
 
-    defer func() {
-        if r := recover(); r != nil {
-            t.Errorf("Panic during evaluation: %v", r)
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Panic during evaluation: %v", r)
+		}
+	}()
 
 	expr := IsExpression{Field: "null", Value: nil}
 

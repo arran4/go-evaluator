@@ -35,7 +35,7 @@ func ExampleQuery_unmarshalJSON() {
         }
     }`
 	var q evaluator.Query
-	json.Unmarshal([]byte(js), &q)
+	_ = json.Unmarshal([]byte(js), &q)
 	type Post struct{ Tags []string }
 	fmt.Println(q.Evaluate(&Post{Tags: []string{"go", "news"}}))
 	// Output: true

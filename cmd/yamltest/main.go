@@ -56,7 +56,7 @@ func main() {
 			log.Fatal(err)
 		}
 		ok, err := evaluate(fh, q)
-		fh.Close()
+		_ = fh.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
