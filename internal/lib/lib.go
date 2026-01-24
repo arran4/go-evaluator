@@ -24,7 +24,7 @@ func CsvFilter(expr string, files ...string) {
 	}
 	writeHeader := true
 	if len(files) == 0 {
-		if err := processCSV(os.Stdin, q, &writeHeader); err != nil {
+		if err := processCSV(os.Stdin, os.Stdout, q, &writeHeader); err != nil {
 			log.Fatal(err)
 		}
 		return
@@ -34,7 +34,7 @@ func CsvFilter(expr string, files ...string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := processCSV(fh, q, &writeHeader); err != nil {
+		if err := processCSV(fh, os.Stdout, q, &writeHeader); err != nil {
 			fh.Close()
 			log.Fatal(err)
 		}
@@ -42,19 +42,20 @@ func CsvFilter(expr string, files ...string) {
 	}
 }
 
-func processCSV(r io.Reader, q evaluator.Query, writeHeader *bool) error {
+func processCSV(r io.Reader, w io.Writer, q evaluator.Query, writeHeader *bool) error {
 	cr := csv.NewReader(r)
 	headers, err := cr.Read()
 	if err != nil {
 		return err
 	}
-	cw := csv.NewWriter(os.Stdout)
+	cw := csv.NewWriter(w)
 	if *writeHeader {
 		if err := cw.Write(headers); err != nil {
 			return err
 		}
 		*writeHeader = false
 	}
+	m := make(map[string]interface{}, len(headers))
 	for {
 		rec, err := cr.Read()
 		if err == io.EOF {
@@ -63,7 +64,7 @@ func processCSV(r io.Reader, q evaluator.Query, writeHeader *bool) error {
 		if err != nil {
 			return err
 		}
-		m := make(map[string]interface{}, len(headers))
+		clear(m)
 		for i, h := range headers {
 			if i < len(rec) {
 				m[h] = rec[i]
