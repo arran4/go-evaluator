@@ -78,220 +78,40 @@ func numeric[T number](v interface{}) (T, bool) {
 	}
 }
 
-func greater[T number](f T, v interface{}) bool {
-	n, ok := numeric[T](v)
-	if !ok {
-		return false
-	}
-	return f > n
+// Comparator allows for custom comparison logic.
+type Comparator interface {
+	Compare(other interface{}) (int, error)
 }
 
-func greaterOrEqual[T number](f T, v interface{}) bool {
-	n, ok := numeric[T](v)
-	if !ok {
-		return false
+// Compare returns an integer comparing two values.
+// The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
+func Compare(a, b interface{}) (int, error) {
+	if c, ok := a.(Comparator); ok {
+		return c.Compare(b)
 	}
-	return f >= n
-}
-
-func less[T number](f T, v interface{}) bool {
-	n, ok := numeric[T](v)
-	if !ok {
-		return false
-	}
-	return f < n
-}
-
-func lessOrEqual[T number](f T, v interface{}) bool {
-	n, ok := numeric[T](v)
-	if !ok {
-		return false
-	}
-	return f <= n
-}
-
-// derefValue dereferences pointer inputs and returns the underlying value.
-// It supports structs and maps and returns false for all other types.
-func derefValue(i interface{}) (reflect.Value, bool) {
-	v := reflect.ValueOf(i)
-	if v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			return reflect.Value{}, false
+	if n1, ok := numeric[float64](a); ok {
+		if n2, ok := numeric[float64](b); ok {
+			if n1 < n2 {
+				return -1, nil
+			}
+			if n1 > n2 {
+				return 1, nil
+			}
+			return 0, nil
 		}
-		v = v.Elem()
-	} else if v.Kind() == reflect.Struct {
-		// maintain backward behaviour: require pointer for structs
-		return reflect.Value{}, false
 	}
-	switch v.Kind() {
-	case reflect.Struct, reflect.Map:
-		return v, true
+	s1 := stringValue(a)
+	s2 := stringValue(b)
+	return strings.Compare(s1, s2), nil
+}
+
+func stringValue(v interface{}) string {
+	switch s := v.(type) {
+	case string:
+		return s
 	default:
-		return reflect.Value{}, false
+		return fmt.Sprint(v)
 	}
-}
-
-// getField retrieves a field value from either a struct or map value.
-// For structs it uses FieldByName, while for maps it looks up the key by name.
-func getField(v reflect.Value, name string) (reflect.Value, bool) {
-	switch v.Kind() {
-	case reflect.Struct:
-		f := v.FieldByName(name)
-		if f.IsValid() {
-			return f, true
-		}
-		return reflect.Value{}, false
-	case reflect.Map:
-		// Fast path for map[string]interface{}
-		if v.CanInterface() {
-			if m, ok := v.Interface().(map[string]interface{}); ok {
-				if val, found := m[name]; found {
-					if val == nil {
-						return reflect.Zero(v.Type().Elem()), true
-					}
-					return reflect.ValueOf(val), true
-				}
-				return reflect.Value{}, false
-			}
-		}
-
-		key := reflect.ValueOf(name)
-		if key.Type().AssignableTo(v.Type().Key()) {
-			f := v.MapIndex(key)
-			if f.IsValid() {
-				// If the map value is an interface, we need to extract the underlying value
-				// to get the correct Kind() for comparison.
-				if f.Kind() == reflect.Interface {
-					return f.Elem(), true
-				}
-				return f, true
-			}
-		}
-		return reflect.Value{}, false
-	default:
-		return reflect.Value{}, false
-	}
-}
-
-// Expression represents a single boolean expression that can be evaluated
-// against a struct value.
-type Expression interface {
-	// Evaluate returns true if the expression matches the supplied value.
-	Evaluate(i interface{}) bool
-}
-
-// ContainsExpression checks whether a slice field contains the given Value.
-type ContainsExpression struct {
-	Field string
-	Value interface{}
-}
-
-func (e ContainsExpression) Evaluate(i interface{}) bool {
-	v, ok := derefValue(i)
-	if !ok {
-		return false
-	}
-	f, ok := getField(v, e.Field)
-	if !ok {
-		return false
-	}
-	if f.Type().Kind() != reflect.Slice {
-		return false
-	}
-	cv := reflect.ValueOf(e.Value)
-	if !cv.IsValid() {
-		return false
-	}
-	if f.Type().Elem().Kind() != cv.Type().Kind() {
-		return false
-	}
-	for i := 0; i < f.Len(); i++ {
-		if reflect.DeepEqual(f.Index(i).Interface(), cv.Interface()) {
-			return true
-		}
-	}
-	return false
-}
-
-// IsNotExpression succeeds when the specified Field does not equal Value.
-type IsNotExpression struct {
-	Field string
-	Value interface{}
-}
-
-func (e IsNotExpression) Evaluate(i interface{}) bool {
-	v, ok := derefValue(i)
-	if !ok {
-		return false
-	}
-	f, ok := getField(v, e.Field)
-	if !ok {
-		return false
-	}
-	return !reflect.DeepEqual(f.Interface(), e.Value)
-}
-
-// IsExpression succeeds when the specified Field equals Value.
-type IsExpression struct {
-	Field string
-	Value interface{}
-}
-
-func (e IsExpression) Evaluate(i interface{}) bool {
-	v, ok := derefValue(i)
-	if !ok {
-		return false
-	}
-	f, ok := getField(v, e.Field)
-	if !ok {
-		return false
-	}
-	if e.Value == nil {
-		switch f.Kind() {
-		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
-			if f.IsNil() {
-				return true
-			}
-		}
-	}
-	return reflect.DeepEqual(f.Interface(), e.Value)
-}
-
-// AndExpression evaluates to true only if all child Expressions do as well.
-type AndExpression struct {
-	Expressions []Query `json:"Expressions"`
-}
-
-func (e AndExpression) Evaluate(i interface{}) bool {
-	for _, q := range e.Expressions {
-		if !q.Evaluate(i) {
-			return false
-		}
-	}
-	return true
-}
-
-// OrExpression evaluates to true if any of the child Expressions do.
-type OrExpression struct {
-	Expressions []Query `json:"Expressions"`
-}
-
-func (e OrExpression) Evaluate(i interface{}) bool {
-	for _, q := range e.Expressions {
-		if q.Evaluate(i) {
-			return true
-		}
-	}
-	return false
-}
-
-// NotExpression inverts the result of a single child Expression.
-type NotExpression struct {
-	Expression Query `json:"Expression"`
-}
-
-func (e NotExpression) Evaluate(i interface{}) bool {
-	return !e.Expression.Evaluate(i)
 }
 
 func numericValue(v interface{}) (float64, bool) {
@@ -339,13 +159,354 @@ func numericValue(v interface{}) (float64, bool) {
 	}
 }
 
-func stringValue(v interface{}) string {
-	switch s := v.(type) {
-	case string:
-		return s
-	default:
-		return fmt.Sprint(v)
+// derefValue dereferences pointer inputs and returns the underlying value.
+// It supports structs and maps and returns false for all other types.
+func derefValue(i interface{}) (reflect.Value, bool) {
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return reflect.Value{}, false
+		}
+		v = v.Elem()
+	} else if v.Kind() == reflect.Struct {
+		// maintain backward behaviour: require pointer for structs
+		return reflect.Value{}, false
 	}
+	switch v.Kind() {
+	case reflect.Struct, reflect.Map:
+		return v, true
+	default:
+		return reflect.Value{}, false
+	}
+}
+
+// Getter interface allows for dynamic field retrieval.
+type Getter interface {
+	Get(name string) (interface{}, error)
+}
+
+// getField retrieves a field value from either a struct, map, or Getter.
+// For structs it uses FieldByName, for maps it looks up the key by name,
+// and for Getter it calls Get.
+func getField(v reflect.Value, name string) (reflect.Value, bool) {
+	if v.Kind() == reflect.Invalid {
+		return reflect.Value{}, false
+	}
+	if v.CanInterface() {
+		if g, ok := v.Interface().(Getter); ok {
+			val, err := g.Get(name)
+			if err == nil {
+				if val == nil {
+					// Handle nil interface return
+					return reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()), true
+				}
+				return reflect.ValueOf(val), true
+			}
+			return reflect.Value{}, false
+		}
+	}
+
+	switch v.Kind() {
+	case reflect.Struct:
+		f := v.FieldByName(name)
+		if f.IsValid() {
+			return f, true
+		}
+		return reflect.Value{}, false
+	case reflect.Map:
+		// Fast path for map[string]interface{}
+		if v.CanInterface() {
+			if m, ok := v.Interface().(map[string]interface{}); ok {
+				if val, found := m[name]; found {
+					if val == nil {
+						return reflect.Zero(v.Type().Elem()), true
+					}
+					return reflect.ValueOf(val), true
+				}
+				return reflect.Value{}, false
+			}
+		}
+
+		key := reflect.ValueOf(name)
+		if key.Type().AssignableTo(v.Type().Key()) {
+			f := v.MapIndex(key)
+			if f.IsValid() {
+				// If the map value is an interface, we need to extract the underlying value
+				// to get the correct Kind() for comparison.
+				if f.Kind() == reflect.Interface {
+					return f.Elem(), true
+				}
+				return f, true
+			}
+		}
+		return reflect.Value{}, false
+	default:
+		return reflect.Value{}, false
+	}
+}
+
+func greater[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f > n
+}
+
+func greaterOrEqual[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f >= n
+}
+
+func less[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f < n
+}
+
+func lessOrEqual[T number](f T, v interface{}) bool {
+	n, ok := numeric[T](v)
+	if !ok {
+		return false
+	}
+	return f <= n
+}
+
+type Term interface {
+	Evaluate(i interface{}) (interface{}, error)
+}
+
+// Field represents a field lookup term.
+type Field struct {
+	Name string
+}
+
+func (f Field) Evaluate(i interface{}) (interface{}, error) {
+	v, ok := derefValue(i)
+	if !ok {
+		return nil, fmt.Errorf("cannot dereference value")
+	}
+	val, ok := getField(v, f.Name)
+	if !ok {
+		return nil, fmt.Errorf("field %s not found", f.Name)
+	}
+	if val.IsValid() && val.CanInterface() {
+		return val.Interface(), nil
+	}
+	return nil, nil
+}
+
+// Constant represents a constant value term.
+type Constant struct {
+	Value interface{}
+}
+
+func (c Constant) Evaluate(i interface{}) (interface{}, error) {
+	return c.Value, nil
+}
+
+// ComparisonExpression evaluates a comparison between two Terms.
+type ComparisonExpression struct {
+	LHS       Term
+	RHS       Term
+	Operation string // eq, neq, gt, gte, lt, lte, contains, icontains
+}
+
+func (e ComparisonExpression) Evaluate(i interface{}) bool {
+	lhs, err := e.LHS.Evaluate(i)
+	if err != nil {
+		return false
+	}
+	rhs, err := e.RHS.Evaluate(i)
+	if err != nil {
+		return false
+	}
+
+	switch e.Operation {
+	case "eq":
+		cmp, err := Compare(lhs, rhs)
+		return err == nil && cmp == 0
+	case "neq":
+		cmp, err := Compare(lhs, rhs)
+		return err == nil && cmp != 0
+	case "gt":
+		cmp, err := Compare(lhs, rhs)
+		return err == nil && cmp > 0
+	case "gte":
+		cmp, err := Compare(lhs, rhs)
+		return err == nil && cmp >= 0
+	case "lt":
+		cmp, err := Compare(lhs, rhs)
+		return err == nil && cmp < 0
+	case "lte":
+		cmp, err := Compare(lhs, rhs)
+		return err == nil && cmp <= 0
+	case "contains":
+		s1 := stringValue(lhs)
+		s2 := stringValue(rhs)
+		return strings.Contains(s1, s2)
+	case "icontains":
+		s1 := stringValue(lhs)
+		s2 := stringValue(rhs)
+		return strings.Contains(strings.ToLower(s1), strings.ToLower(s2))
+	}
+	return false
+}
+
+// Expression represents a single boolean expression that can be evaluated
+// against a struct value.
+type Expression interface {
+	// Evaluate returns true if the expression matches the supplied value.
+	Evaluate(i interface{}) bool
+}
+
+// ContainsExpression checks whether a slice field contains the given Value,
+// or if a string field contains the given substring.
+type ContainsExpression struct {
+	Field string
+	Value interface{}
+}
+
+func (e ContainsExpression) Evaluate(i interface{}) bool {
+	v, ok := derefValue(i)
+	if !ok {
+		return false
+	}
+	f, ok := getField(v, e.Field)
+	if !ok {
+		return false
+	}
+	if f.Kind() == reflect.String {
+		sval := stringValue(e.Value)
+		return strings.Contains(f.String(), sval)
+	}
+	if f.Kind() != reflect.Slice {
+		return false
+	}
+	cv := reflect.ValueOf(e.Value)
+	if !cv.IsValid() {
+		return false
+	}
+	if f.Type().Elem().Kind() != cv.Type().Kind() {
+		return false
+	}
+	for i := 0; i < f.Len(); i++ {
+		if reflect.DeepEqual(f.Index(i).Interface(), cv.Interface()) {
+			return true
+		}
+	}
+	return false
+}
+
+// IContainsExpression checks whether a string field contains the given substring (case-insensitive).
+type IContainsExpression struct {
+	Field string
+	Value interface{}
+}
+
+func (e IContainsExpression) Evaluate(i interface{}) bool {
+	v, ok := derefValue(i)
+	if !ok {
+		return false
+	}
+	f, ok := getField(v, e.Field)
+	if !ok {
+		return false
+	}
+	if f.Kind() == reflect.String {
+		sval := stringValue(e.Value)
+		return strings.Contains(strings.ToLower(f.String()), strings.ToLower(sval))
+	}
+	return false
+}
+
+// IsNotExpression succeeds when the specified Field does not equal Value.
+type IsNotExpression struct {
+	Field string
+	Value interface{}
+}
+
+func (e IsNotExpression) Evaluate(i interface{}) bool {
+	v, ok := derefValue(i)
+	if !ok {
+		return false
+	}
+	f, ok := getField(v, e.Field)
+	if !ok {
+		return false
+	}
+	return !reflect.DeepEqual(f.Interface(), e.Value)
+}
+
+// IsExpression succeeds when the specified Field equals Value.
+type IsExpression struct {
+	Field string
+	Value interface{}
+}
+
+func (e IsExpression) Evaluate(i interface{}) bool {
+	v, ok := derefValue(i)
+	if !ok {
+		return false
+	}
+	f, ok := getField(v, e.Field)
+	if !ok {
+		return false
+	}
+	if e.Value == nil {
+		switch f.Kind() {
+		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
+			if f.IsNil() {
+				return true
+			}
+		}
+	}
+	if reflect.DeepEqual(f.Interface(), e.Value) {
+		return true
+	}
+	return stringValue(f.Interface()) == stringValue(e.Value)
+}
+
+// AndExpression evaluates to true only if all child Expressions do as well.
+type AndExpression struct {
+	Expressions []Query `json:"Expressions"`
+}
+
+func (e AndExpression) Evaluate(i interface{}) bool {
+	for _, q := range e.Expressions {
+		if !q.Evaluate(i) {
+			return false
+		}
+	}
+	return true
+}
+
+// OrExpression evaluates to true if any of the child Expressions do.
+type OrExpression struct {
+	Expressions []Query `json:"Expressions"`
+}
+
+func (e OrExpression) Evaluate(i interface{}) bool {
+	for _, q := range e.Expressions {
+		if q.Evaluate(i) {
+			return true
+		}
+	}
+	return false
+}
+
+// NotExpression inverts the result of a single child Expression.
+type NotExpression struct {
+	Expression Query `json:"Expression"`
+}
+
+func (e NotExpression) Evaluate(i interface{}) bool {
+	return !e.Expression.Evaluate(i)
 }
 
 // GreaterThanExpression compares Field to Value and succeeds when the field is
@@ -497,6 +658,11 @@ func marshalExpression(e Expression) ([]byte, error) {
 			Type:       "Contains",
 			Expression: expr,
 		})
+	case *IContainsExpression:
+		return json.Marshal(typedExpression[*IContainsExpression]{
+			Type:       "IContains",
+			Expression: expr,
+		})
 	case *IsNotExpression:
 		return json.Marshal(typedExpression[*IsNotExpression]{
 			Type:       "IsNot",
@@ -557,6 +723,12 @@ func unmarshalExpression(data []byte) (Expression, error) {
 	switch hdr.Type {
 	case "Contains":
 		var te typedExpression[*ContainsExpression]
+		if err := json.Unmarshal(data, &te); err != nil {
+			return nil, err
+		}
+		return te.Expression, nil
+	case "IContains":
+		var te typedExpression[*IContainsExpression]
 		if err := json.Unmarshal(data, &te); err != nil {
 			return nil, err
 		}
