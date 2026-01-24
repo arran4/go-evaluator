@@ -25,6 +25,7 @@ func process(r io.Reader, q evaluator.Query, writeHeader *bool) error {
 		}
 		*writeHeader = false
 	}
+	m := make(map[string]interface{}, len(headers))
 	for {
 		rec, err := cr.Read()
 		if err == io.EOF {
@@ -33,7 +34,7 @@ func process(r io.Reader, q evaluator.Query, writeHeader *bool) error {
 		if err != nil {
 			return err
 		}
-		m := make(map[string]interface{}, len(headers))
+		clear(m)
 		for i, h := range headers {
 			if i < len(rec) {
 				m[h] = rec[i]
