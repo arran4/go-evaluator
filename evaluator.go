@@ -265,6 +265,85 @@ func (c Constant) Evaluate(i interface{}) (interface{}, error) {
 	return c.Value, nil
 }
 
+// Self represents the input value itself.
+type Self struct{}
+
+func (s Self) Evaluate(i interface{}) (interface{}, error) {
+	return i, nil
+}
+
+// BoolType converts the term result to a boolean.
+type BoolType struct {
+	Term Term
+}
+
+func (b BoolType) Evaluate(i interface{}) (interface{}, error) {
+	val, err := b.Term.Evaluate(i)
+	if err != nil {
+		return false, err
+	}
+	v, err := IsTruthy(val)
+	return v, err
+}
+
+// IsTruthy checks if a value is considered "true" in the expression language.
+// It tries to accept widely accepted truthy values, including parsing strings.
+func IsTruthy(v interface{}) (bool, error) {
+	if v == nil {
+		return false, nil
+	}
+	val := reflect.ValueOf(v)
+	switch val.Kind() {
+	case reflect.Bool:
+		return val.Bool(), nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return val.Int() != 0, nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return val.Uint() != 0, nil
+	case reflect.Float32, reflect.Float64:
+		return val.Float() != 0, nil
+	case reflect.String:
+		b, err := strconv.ParseBool(val.String())
+		if err != nil {
+			return false, err
+		}
+		return b, nil
+	case reflect.Slice, reflect.Map, reflect.Chan:
+		return !val.IsNil() && val.Len() > 0, nil
+	case reflect.Ptr, reflect.Interface:
+		if val.IsNil() {
+			return false, nil
+		}
+		return IsTruthy(val.Elem().Interface())
+	}
+	return true, nil
+}
+
+// If evaluates Condition. If true, evaluates Then, else evaluates Else.
+type If struct {
+	Condition Term
+	Then      Term
+	Else      Term
+}
+
+func (e If) Evaluate(i interface{}) (interface{}, error) {
+	condVal, err := e.Condition.Evaluate(i)
+	if err != nil {
+		return nil, err
+	}
+	b, err := IsTruthy(condVal)
+	if err != nil {
+		return nil, err
+	}
+	if b {
+		return e.Then.Evaluate(i)
+	}
+	if e.Else != nil {
+		return e.Else.Evaluate(i)
+	}
+	return nil, nil // Or appropriate zero value
+}
+
 // ComparisonExpression evaluates a comparison between two Terms.
 type ComparisonExpression struct {
 	LHS       Term
