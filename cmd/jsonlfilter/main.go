@@ -26,7 +26,9 @@ func process(r io.Reader, w io.Writer, q evaluator.Query) error {
 			}
 			return err
 		}
-		if q.Evaluate(m) {
+		if v, err := q.Evaluate(m); err != nil {
+			return err
+		} else if v {
 			if err := enc.Encode(m); err != nil {
 				return err
 			}

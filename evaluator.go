@@ -13,6 +13,25 @@ import (
 	"strings"
 )
 
+// Context holds execution context for the evaluator, including variables and functions.
+type Context struct {
+	Functions map[string]Function
+	Variables map[string]interface{}
+}
+
+// GetContext extracts the Context from the variadic options, or returns a default one.
+func GetContext(opts ...any) *Context {
+	for _, opt := range opts {
+		if ctx, ok := opt.(*Context); ok {
+			return ctx
+		}
+	}
+	return &Context{
+		Functions: map[string]Function{},
+		Variables: map[string]interface{}{},
+	}
+}
+
 // number represents any built-in numeric type.
 type number interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
@@ -233,7 +252,7 @@ func lessOrEqual[T number](f T, v interface{}) bool {
 }
 
 type Term interface {
-	Evaluate(i interface{}) (interface{}, error)
+	Evaluate(i interface{}, opts ...any) (interface{}, error)
 }
 
 // Function defines the interface for a function that can be called by FunctionExpression.
@@ -243,20 +262,36 @@ type Function interface {
 
 // FunctionExpression represents a function call.
 type FunctionExpression struct {
+	Name string
 	Func Function
 	Args []Term
 }
 
-func (f FunctionExpression) Evaluate(i interface{}) (interface{}, error) {
+func (f FunctionExpression) Evaluate(i interface{}, opts ...any) (interface{}, error) {
+	ctx := GetContext(opts...)
+
+	var fn Function
+	if f.Name != "" {
+		if found, ok := ctx.Functions[f.Name]; ok {
+			fn = found
+		}
+	}
+	if fn == nil {
+		fn = f.Func
+	}
+	if fn == nil {
+		return nil, fmt.Errorf("function %q not found", f.Name)
+	}
+
 	args := make([]interface{}, len(f.Args))
 	for idx, arg := range f.Args {
-		val, err := arg.Evaluate(i)
+		val, err := arg.Evaluate(i, opts...)
 		if err != nil {
 			return nil, err
 		}
 		args[idx] = val
 	}
-	return f.Func.Call(args...)
+	return fn.Call(args...)
 }
 
 // Field represents a field lookup term.
@@ -264,7 +299,7 @@ type Field struct {
 	Name string
 }
 
-func (f Field) Evaluate(i interface{}) (interface{}, error) {
+func (f Field) Evaluate(i interface{}, opts ...any) (interface{}, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return nil, fmt.Errorf("cannot dereference value")
@@ -284,14 +319,14 @@ type Constant struct {
 	Value interface{}
 }
 
-func (c Constant) Evaluate(i interface{}) (interface{}, error) {
+func (c Constant) Evaluate(i interface{}, opts ...any) (interface{}, error) {
 	return c.Value, nil
 }
 
 // Self represents the input value itself.
 type Self struct{}
 
-func (s Self) Evaluate(i interface{}) (interface{}, error) {
+func (s Self) Evaluate(i interface{}, opts ...any) (interface{}, error) {
 	return i, nil
 }
 
@@ -300,8 +335,8 @@ type BoolType struct {
 	Term Term
 }
 
-func (b BoolType) Evaluate(i interface{}) (interface{}, error) {
-	val, err := b.Term.Evaluate(i)
+func (b BoolType) Evaluate(i interface{}, opts ...any) (interface{}, error) {
+	val, err := b.Term.Evaluate(i, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -349,8 +384,8 @@ type If struct {
 	Else      Term
 }
 
-func (e If) Evaluate(i interface{}) (interface{}, error) {
-	condVal, err := e.Condition.Evaluate(i)
+func (e If) Evaluate(i interface{}, opts ...any) (interface{}, error) {
+	condVal, err := e.Condition.Evaluate(i, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -359,10 +394,10 @@ func (e If) Evaluate(i interface{}) (interface{}, error) {
 		return nil, err
 	}
 	if b {
-		return e.Then.Evaluate(i)
+		return e.Then.Evaluate(i, opts...)
 	}
 	if e.Else != nil {
-		return e.Else.Evaluate(i)
+		return e.Else.Evaluate(i, opts...)
 	}
 	return nil, nil // Or appropriate zero value
 }
@@ -374,52 +409,52 @@ type ComparisonExpression struct {
 	Operation string // eq, neq, gt, gte, lt, lte, contains, icontains
 }
 
-func (e ComparisonExpression) Evaluate(i interface{}) bool {
-	lhs, err := e.LHS.Evaluate(i)
+func (e ComparisonExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+	lhs, err := e.LHS.Evaluate(i, opts...)
 	if err != nil {
-		return false
+		return false, err
 	}
-	rhs, err := e.RHS.Evaluate(i)
+	rhs, err := e.RHS.Evaluate(i, opts...)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	switch e.Operation {
 	case "eq":
 		cmp, err := Compare(lhs, rhs)
-		return err == nil && cmp == 0
+		return err == nil && cmp == 0, nil
 	case "neq":
 		cmp, err := Compare(lhs, rhs)
-		return err == nil && cmp != 0
+		return err == nil && cmp != 0, nil
 	case "gt":
 		cmp, err := Compare(lhs, rhs)
-		return err == nil && cmp > 0
+		return err == nil && cmp > 0, nil
 	case "gte":
 		cmp, err := Compare(lhs, rhs)
-		return err == nil && cmp >= 0
+		return err == nil && cmp >= 0, nil
 	case "lt":
 		cmp, err := Compare(lhs, rhs)
-		return err == nil && cmp < 0
+		return err == nil && cmp < 0, nil
 	case "lte":
 		cmp, err := Compare(lhs, rhs)
-		return err == nil && cmp <= 0
+		return err == nil && cmp <= 0, nil
 	case "contains":
 		s1 := stringValue(lhs)
 		s2 := stringValue(rhs)
-		return strings.Contains(s1, s2)
+		return strings.Contains(s1, s2), nil
 	case "icontains":
 		s1 := stringValue(lhs)
 		s2 := stringValue(rhs)
-		return strings.Contains(strings.ToLower(s1), strings.ToLower(s2))
+		return strings.Contains(strings.ToLower(s1), strings.ToLower(s2)), nil
 	}
-	return false
+	return false, nil
 }
 
 // Expression represents a single boolean expression that can be evaluated
 // against a struct value.
 type Expression interface {
 	// Evaluate returns true if the expression matches the supplied value.
-	Evaluate(i interface{}) bool
+	Evaluate(i interface{}, opts ...any) (bool, error)
 }
 
 // ContainsExpression checks whether a slice field contains the given Value,
@@ -429,35 +464,35 @@ type ContainsExpression struct {
 	Value interface{}
 }
 
-func (e ContainsExpression) Evaluate(i interface{}) bool {
+func (e ContainsExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	if f.Kind() == reflect.String {
 		sval := stringValue(e.Value)
-		return strings.Contains(f.String(), sval)
+		return strings.Contains(f.String(), sval), nil
 	}
 	if f.Kind() != reflect.Slice {
-		return false
+		return false, nil
 	}
 	cv := reflect.ValueOf(e.Value)
 	if !cv.IsValid() {
-		return false
+		return false, nil
 	}
 	if f.Type().Elem().Kind() != cv.Type().Kind() {
-		return false
+		return false, nil
 	}
 	for i := 0; i < f.Len(); i++ {
 		if reflect.DeepEqual(f.Index(i).Interface(), cv.Interface()) {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 // IContainsExpression checks whether a string field contains the given substring (case-insensitive).
@@ -466,20 +501,20 @@ type IContainsExpression struct {
 	Value interface{}
 }
 
-func (e IContainsExpression) Evaluate(i interface{}) bool {
+func (e IContainsExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	if f.Kind() == reflect.String {
 		sval := stringValue(e.Value)
-		return strings.Contains(strings.ToLower(f.String()), strings.ToLower(sval))
+		return strings.Contains(strings.ToLower(f.String()), strings.ToLower(sval)), nil
 	}
-	return false
+	return false, nil
 }
 
 // IsNotExpression succeeds when the specified Field does not equal Value.
@@ -488,16 +523,16 @@ type IsNotExpression struct {
 	Value interface{}
 }
 
-func (e IsNotExpression) Evaluate(i interface{}) bool {
+func (e IsNotExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
-	return !reflect.DeepEqual(f.Interface(), e.Value)
+	return !reflect.DeepEqual(f.Interface(), e.Value), nil
 }
 
 // IsExpression succeeds when the specified Field equals Value.
@@ -506,27 +541,27 @@ type IsExpression struct {
 	Value interface{}
 }
 
-func (e IsExpression) Evaluate(i interface{}) bool {
+func (e IsExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	if e.Value == nil {
 		switch f.Kind() {
 		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
 			if f.IsNil() {
-				return true
+				return true, nil
 			}
 		}
 	}
 	if reflect.DeepEqual(f.Interface(), e.Value) {
-		return true
+		return true, nil
 	}
-	return stringValue(f.Interface()) == stringValue(e.Value)
+	return stringValue(f.Interface()) == stringValue(e.Value), nil
 }
 
 // AndExpression evaluates to true only if all child Expressions do as well.
@@ -534,13 +569,17 @@ type AndExpression struct {
 	Expressions []Query `json:"Expressions"`
 }
 
-func (e AndExpression) Evaluate(i interface{}) bool {
+func (e AndExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	for _, q := range e.Expressions {
-		if !q.Evaluate(i) {
-			return false
+		matched, err := q.Evaluate(i, opts...)
+		if err != nil {
+			return false, err
+		}
+		if !matched {
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
 // OrExpression evaluates to true if any of the child Expressions do.
@@ -548,13 +587,17 @@ type OrExpression struct {
 	Expressions []Query `json:"Expressions"`
 }
 
-func (e OrExpression) Evaluate(i interface{}) bool {
+func (e OrExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	for _, q := range e.Expressions {
-		if q.Evaluate(i) {
-			return true
+		matched, err := q.Evaluate(i, opts...)
+		if err != nil {
+			return false, err
+		}
+		if matched {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 // NotExpression inverts the result of a single child Expression.
@@ -562,8 +605,12 @@ type NotExpression struct {
 	Expression Query `json:"Expression"`
 }
 
-func (e NotExpression) Evaluate(i interface{}) bool {
-	return !e.Expression.Evaluate(i)
+func (e NotExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+	matched, err := e.Expression.Evaluate(i, opts...)
+	if err != nil {
+		return false, err
+	}
+	return !matched, nil
 }
 
 // GreaterThanExpression compares Field to Value and succeeds when the field is
@@ -573,27 +620,27 @@ type GreaterThanExpression struct {
 	Value interface{}
 }
 
-func (e GreaterThanExpression) Evaluate(i interface{}) bool {
+func (e GreaterThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return greater[int64](f.Int(), e.Value)
+		return greater[int64](f.Int(), e.Value), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return greater[uint64](f.Uint(), e.Value)
+		return greater[uint64](f.Uint(), e.Value), nil
 	case reflect.Float32, reflect.Float64:
-		return greater[float64](f.Float(), e.Value)
+		return greater[float64](f.Float(), e.Value), nil
 	case reflect.String:
 		sval := stringValue(e.Value)
-		return strings.Compare(f.String(), sval) > 0
+		return strings.Compare(f.String(), sval) > 0, nil
 	default:
-		return false
+		return false, nil
 	}
 }
 
@@ -604,27 +651,27 @@ type GreaterThanOrEqualExpression struct {
 	Value interface{}
 }
 
-func (e GreaterThanOrEqualExpression) Evaluate(i interface{}) bool {
+func (e GreaterThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return greaterOrEqual[int64](f.Int(), e.Value)
+		return greaterOrEqual[int64](f.Int(), e.Value), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return greaterOrEqual[uint64](f.Uint(), e.Value)
+		return greaterOrEqual[uint64](f.Uint(), e.Value), nil
 	case reflect.Float32, reflect.Float64:
-		return greaterOrEqual[float64](f.Float(), e.Value)
+		return greaterOrEqual[float64](f.Float(), e.Value), nil
 	case reflect.String:
 		sval := stringValue(e.Value)
-		return strings.Compare(f.String(), sval) >= 0
+		return strings.Compare(f.String(), sval) >= 0, nil
 	default:
-		return false
+		return false, nil
 	}
 }
 
@@ -634,27 +681,27 @@ type LessThanExpression struct {
 	Value interface{}
 }
 
-func (e LessThanExpression) Evaluate(i interface{}) bool {
+func (e LessThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return less[int64](f.Int(), e.Value)
+		return less[int64](f.Int(), e.Value), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return less[uint64](f.Uint(), e.Value)
+		return less[uint64](f.Uint(), e.Value), nil
 	case reflect.Float32, reflect.Float64:
-		return less[float64](f.Float(), e.Value)
+		return less[float64](f.Float(), e.Value), nil
 	case reflect.String:
 		sval := stringValue(e.Value)
-		return strings.Compare(f.String(), sval) < 0
+		return strings.Compare(f.String(), sval) < 0, nil
 	default:
-		return false
+		return false, nil
 	}
 }
 
@@ -664,27 +711,27 @@ type LessThanOrEqualExpression struct {
 	Value interface{}
 }
 
-func (e LessThanOrEqualExpression) Evaluate(i interface{}) bool {
+func (e LessThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
-		return false
+		return false, nil
 	}
 	f, ok := getField(v, e.Field)
 	if !ok {
-		return false
+		return false, nil
 	}
 	switch f.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return lessOrEqual[int64](f.Int(), e.Value)
+		return lessOrEqual[int64](f.Int(), e.Value), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return lessOrEqual[uint64](f.Uint(), e.Value)
+		return lessOrEqual[uint64](f.Uint(), e.Value), nil
 	case reflect.Float32, reflect.Float64:
-		return lessOrEqual[float64](f.Float(), e.Value)
+		return lessOrEqual[float64](f.Float(), e.Value), nil
 	case reflect.String:
 		sval := stringValue(e.Value)
-		return strings.Compare(f.String(), sval) <= 0
+		return strings.Compare(f.String(), sval) <= 0, nil
 	default:
-		return false
+		return false, nil
 	}
 }
 
@@ -849,11 +896,11 @@ func unmarshalExpression(data []byte) (Expression, error) {
 	}
 }
 
-func (q *Query) Evaluate(i interface{}) bool {
+func (q *Query) Evaluate(i interface{}, opts ...any) (bool, error) {
 	if q.Expression != nil {
-		return q.Expression.Evaluate(i)
+		return q.Expression.Evaluate(i, opts...)
 	}
-	return false
+	return false, nil
 }
 
 func (q *Query) UnmarshalJSON(data []byte) error {

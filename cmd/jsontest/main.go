@@ -18,7 +18,7 @@ func evaluate(r io.Reader, q evaluator.Query) (bool, error) {
 	if err := dec.Decode(&m); err != nil {
 		return false, err
 	}
-	return q.Evaluate(m), nil
+	return q.Evaluate(m)
 }
 
 func usage() {

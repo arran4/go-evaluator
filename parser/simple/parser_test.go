@@ -19,8 +19,8 @@ func TestParseAndEvaluate(t *testing.T) {
 		t.Fatalf("parse: %v", err)
 	}
 	u := &testUser{Name: "bob", Age: 35}
-	if !q.Evaluate(u) {
-		t.Errorf("evaluation failed")
+	if v, err := q.Evaluate(u); err != nil || !v {
+		t.Errorf("evaluation failed: %v %v", v, err)
 	}
 }
 

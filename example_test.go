@@ -23,7 +23,11 @@ func ExampleQuery_Evaluate() {
 		Age  int
 	}
 
-	fmt.Println(q.Evaluate(&User{Name: "bob", Age: 35}))
+	v, err := q.Evaluate(&User{Name: "bob", Age: 35})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(v)
 	// Output: true
 }
 
@@ -41,7 +45,11 @@ func ExampleQuery_unmarshalJSON() {
 	var q evaluator.Query
 	_ = json.Unmarshal([]byte(js), &q)
 	type Post struct{ Tags []string }
-	fmt.Println(q.Evaluate(&Post{Tags: []string{"go", "news"}}))
+	v, err := q.Evaluate(&Post{Tags: []string{"go", "news"}})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(v)
 	// Output: true
 }
 
@@ -59,11 +67,14 @@ func Example_simpleParser() {
 		Price    float64
 	}
 
-	result := query.Evaluate(&Product{
+	result, err := query.Evaluate(&Product{
 		Name:     "Laptop",
 		Category: "Electronics",
 		Price:    999.99,
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println(result)
 	// Output: true
 }

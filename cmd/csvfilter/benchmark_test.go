@@ -13,8 +13,8 @@ import (
 
 type trueExpression struct{}
 
-func (e trueExpression) Evaluate(i interface{}) bool {
-	return true
+func (e trueExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+	return true, nil
 }
 
 func BenchmarkProcess(b *testing.B) {

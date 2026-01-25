@@ -40,7 +40,11 @@ func process(r io.Reader, q evaluator.Query, writeHeader *bool) error {
 				m[h] = rec[i]
 			}
 		}
-		if q.Evaluate(m) {
+		v, err := q.Evaluate(m)
+		if err != nil {
+			return err
+		}
+		if v {
 			if err := cw.Write(rec); err != nil {
 				return err
 			}

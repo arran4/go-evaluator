@@ -17,7 +17,7 @@ func BenchmarkMapAccess(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if !expr.Evaluate(data) {
+		if v, err := expr.Evaluate(data); err != nil || !v {
 			b.Fatal("expected true")
 		}
 	}
@@ -32,7 +32,7 @@ func BenchmarkMapAccessMiss(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if expr.Evaluate(data) {
+		if v, err := expr.Evaluate(data); err != nil || v {
 			b.Fatal("expected false")
 		}
 	}
