@@ -143,6 +143,19 @@ func getField(v reflect.Value, name string) (reflect.Value, bool) {
 		}
 		return reflect.Value{}, false
 	case reflect.Map:
+		// Fast path for map[string]interface{}
+		if v.CanInterface() {
+			if m, ok := v.Interface().(map[string]interface{}); ok {
+				if val, found := m[name]; found {
+					if val == nil {
+						return reflect.Zero(v.Type().Elem()), true
+					}
+					return reflect.ValueOf(val), true
+				}
+				return reflect.Value{}, false
+			}
+		}
+
 		key := reflect.ValueOf(name)
 		if key.Type().AssignableTo(v.Type().Key()) {
 			f := v.MapIndex(key)

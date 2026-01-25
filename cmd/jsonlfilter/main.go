@@ -12,11 +12,14 @@ import (
 	"github.com/arran4/go-evaluator/parser/simple"
 )
 
-func process(r io.Reader, q evaluator.Query) error {
+func process(r io.Reader, w io.Writer, q evaluator.Query) error {
 	dec := json.NewDecoder(r)
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(w)
+	var m map[string]interface{}
 	for {
-		var m map[string]interface{}
+		if m != nil {
+			clear(m)
+		}
 		if err := dec.Decode(&m); err != nil {
 			if err == io.EOF {
 				break
@@ -51,7 +54,7 @@ func main() {
 	}
 	files := flag.Args()
 	if len(files) == 0 {
-		if err := process(os.Stdin, q); err != nil {
+		if err := process(os.Stdin, os.Stdout, q); err != nil {
 			log.Fatal(err)
 		}
 		return
@@ -61,7 +64,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := process(fh, q); err != nil {
+		if err := process(fh, os.Stdout, q); err != nil {
 			fh.Close()
 			log.Fatal(err)
 		}
