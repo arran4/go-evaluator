@@ -12,7 +12,7 @@ type user struct {
 
 func TestAliasesEvaluate(t *testing.T) {
 	q := aliases.Q{Expression: &aliases.EQ{Field: "Name", Value: "bob"}}
-	if !q.Evaluate(&user{Name: "bob"}) {
-		t.Fatalf("expected true")
+	if v, err := q.Evaluate(&user{Name: "bob"}); err != nil || !v {
+		t.Fatalf("expected true: %v %v", v, err)
 	}
 }

@@ -6,8 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-
 )
 
 var _ Cmd = (*Yamltest)(nil)
