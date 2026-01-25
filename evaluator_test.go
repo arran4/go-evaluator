@@ -14,58 +14,58 @@ type testUser struct {
 
 func TestContainsExpression(t *testing.T) {
 	u := &testUser{Tags: []string{"a", "b"}}
-	if !(ContainsExpression{Field: "Tags", Value: "a"}.Evaluate(u)) {
-		t.Errorf("expected true")
+	if v, err := (ContainsExpression{Field: "Tags", Value: "a"}.Evaluate(u)); err != nil || !v {
+		t.Errorf("expected true, got %v, %v", v, err)
 	}
-	if (ContainsExpression{Field: "Tags", Value: "c"}.Evaluate(u)) {
-		t.Errorf("expected false")
+	if v, err := (ContainsExpression{Field: "Tags", Value: "c"}.Evaluate(u)); err != nil || v {
+		t.Errorf("expected false, got %v, %v", v, err)
 	}
 }
 
 func TestIsAndIsNot(t *testing.T) {
 	u := &testUser{Name: "bob"}
-	if !(IsExpression{Field: "Name", Value: "bob"}.Evaluate(u)) {
-		t.Errorf("is failed")
+	if v, err := (IsExpression{Field: "Name", Value: "bob"}.Evaluate(u)); err != nil || !v {
+		t.Errorf("is failed: %v %v", v, err)
 	}
-	if !(IsNotExpression{Field: "Name", Value: "alice"}.Evaluate(u)) {
-		t.Errorf("isnot failed")
+	if v, err := (IsNotExpression{Field: "Name", Value: "alice"}.Evaluate(u)); err != nil || !v {
+		t.Errorf("isnot failed: %v %v", v, err)
 	}
 }
 
 func TestComparisons(t *testing.T) {
 	u := &testUser{Age: 40, Score: 4.5}
-	if !((&GreaterThanExpression{Field: "Age", Value: 30}).Evaluate(u)) {
-		t.Errorf("gt failed")
+	if v, err := (&GreaterThanExpression{Field: "Age", Value: 30}).Evaluate(u); err != nil || !v {
+		t.Errorf("gt failed: %v %v", v, err)
 	}
-	if !((&GreaterThanOrEqualExpression{Field: "Age", Value: 40}).Evaluate(u)) {
-		t.Errorf("gte failed")
+	if v, err := (&GreaterThanOrEqualExpression{Field: "Age", Value: 40}).Evaluate(u); err != nil || !v {
+		t.Errorf("gte failed: %v %v", v, err)
 	}
-	if !((&LessThanExpression{Field: "Score", Value: 5}).Evaluate(u)) {
-		t.Errorf("lt failed")
+	if v, err := (&LessThanExpression{Field: "Score", Value: 5}).Evaluate(u); err != nil || !v {
+		t.Errorf("lt failed: %v %v", v, err)
 	}
-	if !((&LessThanOrEqualExpression{Field: "Score", Value: 4.5}).Evaluate(u)) {
-		t.Errorf("lte failed")
+	if v, err := (&LessThanOrEqualExpression{Field: "Score", Value: 4.5}).Evaluate(u); err != nil || !v {
+		t.Errorf("lte failed: %v %v", v, err)
 	}
 
-	if ((&GreaterThanExpression{Field: "Missing", Value: 1}).Evaluate(u)) {
-		t.Errorf("gt missing field should be false")
+	if v, err := (&GreaterThanExpression{Field: "Missing", Value: 1}).Evaluate(u); err != nil || v {
+		t.Errorf("gt missing field should be false: %v %v", v, err)
 	}
 }
 
 func TestStringComparisons(t *testing.T) {
 	u := &testUser{Name: "bob"}
 
-	if !((&GreaterThanExpression{Field: "Name", Value: "ann"}).Evaluate(u)) {
-		t.Errorf("gt string failed")
+	if v, err := (&GreaterThanExpression{Field: "Name", Value: "ann"}).Evaluate(u); err != nil || !v {
+		t.Errorf("gt string failed: %v %v", v, err)
 	}
-	if !((&GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u)) {
-		t.Errorf("gte string failed")
+	if v, err := (&GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u); err != nil || !v {
+		t.Errorf("gte string failed: %v %v", v, err)
 	}
-	if !((&LessThanExpression{Field: "Name", Value: "carol"}).Evaluate(u)) {
-		t.Errorf("lt string failed")
+	if v, err := (&LessThanExpression{Field: "Name", Value: "carol"}).Evaluate(u); err != nil || !v {
+		t.Errorf("lt string failed: %v %v", v, err)
 	}
-	if !((&LessThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u)) {
-		t.Errorf("lte string failed")
+	if v, err := (&LessThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u); err != nil || !v {
+		t.Errorf("lte string failed: %v %v", v, err)
 	}
 }
 
@@ -75,29 +75,29 @@ func TestLogicalExpressions(t *testing.T) {
 		{Expression: &IsExpression{Field: "Name", Value: "bob"}},
 		{Expression: &GreaterThanExpression{Field: "Age", Value: 40}},
 	}}
-	if !(and.Evaluate(u)) {
-		t.Errorf("and failed")
+	if v, err := and.Evaluate(u); err != nil || !v {
+		t.Errorf("and failed: %v %v", v, err)
 	}
 	or := OrExpression{Expressions: []Query{
 		{Expression: &IsExpression{Field: "Name", Value: "alice"}},
 		{Expression: &GreaterThanExpression{Field: "Age", Value: 40}},
 	}}
-	if !(or.Evaluate(u)) {
-		t.Errorf("or failed")
+	if v, err := or.Evaluate(u); err != nil || !v {
+		t.Errorf("or failed: %v %v", v, err)
 	}
 	not := NotExpression{Expression: Query{Expression: &IsExpression{Field: "Name", Value: "alice"}}}
-	if !(not.Evaluate(u)) {
-		t.Errorf("not failed")
+	if v, err := not.Evaluate(u); err != nil || !v {
+		t.Errorf("not failed: %v %v", v, err)
 	}
 }
 
 func TestNonPointerInput(t *testing.T) {
 	u := testUser{Tags: []string{"a"}, Name: "bob"}
-	if (ContainsExpression{Field: "Tags", Value: "a"}).Evaluate(u) {
-		t.Errorf("expected false for non-pointer input")
+	if v, err := (ContainsExpression{Field: "Tags", Value: "a"}).Evaluate(u); err != nil || v {
+		t.Errorf("expected false for non-pointer input: %v %v", v, err)
 	}
-	if (IsExpression{Field: "Name", Value: "bob"}).Evaluate(u) {
-		t.Errorf("expected false for non-pointer input")
+	if v, err := (IsExpression{Field: "Name", Value: "bob"}).Evaluate(u); err != nil || v {
+		t.Errorf("expected false for non-pointer input: %v %v", v, err)
 	}
 }
 
@@ -118,8 +118,8 @@ func TestQueryUnmarshalAndEvaluate(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	u := &testUser{Name: "bob", Age: 35}
-	if !(q.Evaluate(u)) {
-		t.Errorf("query evaluate failed")
+	if v, err := q.Evaluate(u); err != nil || !v {
+		t.Errorf("query evaluate failed: %v %v", v, err)
 	}
 }
 
@@ -138,8 +138,8 @@ func TestQueryUnmarshalStringCompare(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	u := &testUser{Name: "bob"}
-	if !q.Evaluate(u) {
-		t.Errorf("string comparison in query failed")
+	if v, err := q.Evaluate(u); err != nil || !v {
+		t.Errorf("string comparison in query failed: %v %v", v, err)
 	}
 }
 func TestQueryMarshalRoundTrip(t *testing.T) {
@@ -175,7 +175,12 @@ func TestQueryMarshalEvaluate(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	u := &testUser{Name: "bob"}
-	if q.Evaluate(u) != q2.Evaluate(u) {
-		t.Errorf("evaluation mismatch after round trip")
+	v1, err1 := q.Evaluate(u)
+	v2, err2 := q2.Evaluate(u)
+	if err1 != err2 {
+		t.Fatalf("error mismatch: %v vs %v", err1, err2)
+	}
+	if v1 != v2 {
+		t.Errorf("evaluation mismatch after round trip: %v vs %v", v1, v2)
 	}
 }

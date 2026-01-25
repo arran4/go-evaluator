@@ -12,6 +12,7 @@ The Evaluator library allows you to:
 - **Safe Querying**: Expose a simple, safe query capability to end-users without exposing full SQL or code execution.
 - **Portability**: Serialize queries to JSON to store them in a database or send them over a network.
 - **Type Safety**: Works with standard Go structs and types.
+- **Custom Logic**: Extend the evaluator with custom functions using `FunctionExpression`.
 
 ## Installation
 
@@ -36,6 +37,7 @@ go install github.com/arran4/go-evaluator/cmd/yamltest@latest
 - Numeric and lexical comparisons (`GT`, `GTE`, `LT`, `LTE`)
 - Membership checks with `Contains`
 - Logical composition using `And`, `Or` and `Not`
+- **Custom Functions**: Execute arbitrary logic via `FunctionExpression`
 - JSON serialisation for easy storage or transmission of queries
 
 ## Basic Usage
@@ -109,6 +111,33 @@ func main() {
 }
 ```
 
+## Custom Functions
+
+You can execute arbitrary logic (like math, formatting, or lookups) by implementing the `Function` interface and using `FunctionExpression`.
+
+```go
+// 1. Implement Function interface
+type SumFunc struct{}
+func (s *SumFunc) Call(args ...interface{}) (interface{}, error) {
+    sum := 0.0
+    for _, arg := range args {
+        // ... type assertion and summing ...
+    }
+    return sum, nil
+}
+
+// 2. Use in Expression
+expr := evaluator.FunctionExpression{
+    Func: &SumFunc{},
+    Args: []evaluator.Term{
+        evaluator.Constant{Value: 10},
+        evaluator.Constant{Value: 20},
+    },
+}
+
+result, _ := expr.Evaluate(nil) // 30
+```
+
 ## JSON Queries
 
 Queries can be marshalled to and from JSON. This is handy for configuration
@@ -142,6 +171,7 @@ lists the available types and their purpose:
 | `LT` / `LTE`            | Numeric or lexical "less than" comparisons      |
 | `Contains`              | Test that a slice field contains a value        |
 | `And` / `Or` / `Not`    | Compose other expressions logically             |
+| `FunctionExpression`    | Execute a custom `Function` implementation      |
 
 Example usage:
 

@@ -19,7 +19,7 @@ func evaluate(r io.Reader, q evaluator.Query) (bool, error) {
 	if err := dec.Decode(&m); err != nil {
 		return false, err
 	}
-	return q.Evaluate(m), nil
+	return q.Evaluate(m)
 }
 
 func usage() {
@@ -56,7 +56,7 @@ func main() {
 			log.Fatal(err)
 		}
 		ok, err := evaluate(fh, q)
-		fh.Close()
+		_ = fh.Close()
 		if err != nil {
 			log.Fatal(err)
 		}

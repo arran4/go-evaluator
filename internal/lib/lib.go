@@ -35,10 +35,10 @@ func CsvFilter(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		if err := processCSV(fh, os.Stdout, q, &writeHeader); err != nil {
-			fh.Close()
+			_ = fh.Close()
 			log.Fatal(err)
 		}
-		fh.Close()
+		_ = fh.Close()
 	}
 }
 
@@ -70,7 +70,11 @@ func processCSV(r io.Reader, w io.Writer, q evaluator.Query, writeHeader *bool) 
 				m[h] = rec[i]
 			}
 		}
-		if q.Evaluate(m) {
+		matched, err := q.Evaluate(m)
+		if err != nil {
+			return err
+		}
+		if matched {
 			if err := cw.Write(rec); err != nil {
 				return err
 			}
@@ -101,10 +105,10 @@ func JsonlFilter(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		if err := processJSONL(fh, q); err != nil {
-			fh.Close()
+			_ = fh.Close()
 			log.Fatal(err)
 		}
-		fh.Close()
+		_ = fh.Close()
 	}
 }
 
@@ -119,7 +123,11 @@ func processJSONL(r io.Reader, q evaluator.Query) error {
 			}
 			return err
 		}
-		if q.Evaluate(m) {
+		matched, err := q.Evaluate(m)
+		if err != nil {
+			return err
+		}
+		if matched {
 			if err := enc.Encode(m); err != nil {
 				return err
 			}
@@ -153,7 +161,7 @@ func JsonTest(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		ok, err := evaluateJSON(fh, q)
-		fh.Close()
+		_ = fh.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -169,7 +177,7 @@ func evaluateJSON(r io.Reader, q evaluator.Query) (bool, error) {
 	if err := dec.Decode(&m); err != nil {
 		return false, err
 	}
-	return q.Evaluate(m), nil
+	return q.Evaluate(m)
 }
 
 // YamlTest evaluates a YAML document against the expression.
@@ -197,7 +205,7 @@ func YamlTest(expr string, files ...string) {
 			log.Fatal(err)
 		}
 		ok, err := evaluateYAML(fh, q)
-		fh.Close()
+		_ = fh.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -213,5 +221,5 @@ func evaluateYAML(r io.Reader, q evaluator.Query) (bool, error) {
 	if err := dec.Decode(&m); err != nil {
 		return false, err
 	}
-	return q.Evaluate(m), nil
+	return q.Evaluate(m)
 }

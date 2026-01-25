@@ -13,8 +13,8 @@ import (
 
 type trueExpression struct{}
 
-func (e trueExpression) Evaluate(i interface{}) bool {
-	return true
+func (e trueExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+	return true, nil
 }
 
 func BenchmarkProcess(b *testing.B) {
@@ -84,11 +84,11 @@ func TestProcess_Functional(t *testing.T) {
 	errChan := make(chan error, 1)
 	go func() {
 		errChan <- process(reader, q, &wh)
-		w.Close()
+		_ = w.Close()
 	}()
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout
 
 	if err := <-errChan; err != nil {
