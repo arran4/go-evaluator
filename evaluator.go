@@ -236,6 +236,29 @@ type Term interface {
 	Evaluate(i interface{}) (interface{}, error)
 }
 
+// Function defines the interface for a function that can be called by FunctionExpression.
+type Function interface {
+	Call(args ...interface{}) (interface{}, error)
+}
+
+// FunctionExpression represents a function call.
+type FunctionExpression struct {
+	Func Function
+	Args []Term
+}
+
+func (f FunctionExpression) Evaluate(i interface{}) (interface{}, error) {
+	args := make([]interface{}, len(f.Args))
+	for idx, arg := range f.Args {
+		val, err := arg.Evaluate(i)
+		if err != nil {
+			return nil, err
+		}
+		args[idx] = val
+	}
+	return f.Func.Call(args...)
+}
+
 // Field represents a field lookup term.
 type Field struct {
 	Name string
