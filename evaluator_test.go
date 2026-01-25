@@ -34,20 +34,20 @@ func TestIsAndIsNot(t *testing.T) {
 
 func TestComparisons(t *testing.T) {
 	u := &testUser{Age: 40, Score: 4.5}
-	if v, err := (GreaterThanExpression{Field: "Age", Value: 30}.Evaluate(u)); err != nil || !v {
+	if v, err := (&GreaterThanExpression{Field: "Age", Value: 30}).Evaluate(u); err != nil || !v {
 		t.Errorf("gt failed: %v %v", v, err)
 	}
-	if v, err := (GreaterThanOrEqualExpression{Field: "Age", Value: 40}.Evaluate(u)); err != nil || !v {
+	if v, err := (&GreaterThanOrEqualExpression{Field: "Age", Value: 40}).Evaluate(u); err != nil || !v {
 		t.Errorf("gte failed: %v %v", v, err)
 	}
-	if v, err := (LessThanExpression{Field: "Score", Value: 5}.Evaluate(u)); err != nil || !v {
+	if v, err := (&LessThanExpression{Field: "Score", Value: 5}).Evaluate(u); err != nil || !v {
 		t.Errorf("lt failed: %v %v", v, err)
 	}
-	if v, err := (LessThanOrEqualExpression{Field: "Score", Value: 4.5}.Evaluate(u)); err != nil || !v {
+	if v, err := (&LessThanOrEqualExpression{Field: "Score", Value: 4.5}).Evaluate(u); err != nil || !v {
 		t.Errorf("lte failed: %v %v", v, err)
 	}
 
-	if v, err := (GreaterThanExpression{Field: "Missing", Value: 1}.Evaluate(u)); err != nil || v {
+	if v, err := (&GreaterThanExpression{Field: "Missing", Value: 1}).Evaluate(u); err != nil || v {
 		t.Errorf("gt missing field should be false: %v %v", v, err)
 	}
 }
@@ -55,16 +55,16 @@ func TestComparisons(t *testing.T) {
 func TestStringComparisons(t *testing.T) {
 	u := &testUser{Name: "bob"}
 
-	if v, err := (GreaterThanExpression{Field: "Name", Value: "ann"}.Evaluate(u)); err != nil || !v {
+	if v, err := (&GreaterThanExpression{Field: "Name", Value: "ann"}).Evaluate(u); err != nil || !v {
 		t.Errorf("gt string failed: %v %v", v, err)
 	}
-	if v, err := (GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}.Evaluate(u)); err != nil || !v {
+	if v, err := (&GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u); err != nil || !v {
 		t.Errorf("gte string failed: %v %v", v, err)
 	}
-	if v, err := (LessThanExpression{Field: "Name", Value: "carol"}.Evaluate(u)); err != nil || !v {
+	if v, err := (&LessThanExpression{Field: "Name", Value: "carol"}).Evaluate(u); err != nil || !v {
 		t.Errorf("lt string failed: %v %v", v, err)
 	}
-	if v, err := (LessThanOrEqualExpression{Field: "Name", Value: "bob"}.Evaluate(u)); err != nil || !v {
+	if v, err := (&LessThanOrEqualExpression{Field: "Name", Value: "bob"}).Evaluate(u); err != nil || !v {
 		t.Errorf("lte string failed: %v %v", v, err)
 	}
 }

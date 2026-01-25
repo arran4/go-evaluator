@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 // Context holds execution context for the evaluator, including variables and functions.
@@ -618,9 +619,10 @@ func (e NotExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 type GreaterThanExpression struct {
 	Field string
 	Value interface{}
+	sVal  atomic.Pointer[string]
 }
 
-func (e GreaterThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *GreaterThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -637,7 +639,17 @@ func (e GreaterThanExpression) Evaluate(i interface{}, opts ...any) (bool, error
 	case reflect.Float32, reflect.Float64:
 		return greater[float64](f.Float(), e.Value), nil
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) > 0, nil
+		}
+		var sval string
+		ptr := e.sVal.Load()
+		if ptr != nil {
+			sval = *ptr
+		} else {
+			sval = stringValue(e.Value)
+			e.sVal.Store(&sval)
+		}
 		return strings.Compare(f.String(), sval) > 0, nil
 	default:
 		return false, nil
@@ -649,9 +661,10 @@ func (e GreaterThanExpression) Evaluate(i interface{}, opts ...any) (bool, error
 type GreaterThanOrEqualExpression struct {
 	Field string
 	Value interface{}
+	sVal  atomic.Pointer[string]
 }
 
-func (e GreaterThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -668,7 +681,17 @@ func (e GreaterThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool
 	case reflect.Float32, reflect.Float64:
 		return greaterOrEqual[float64](f.Float(), e.Value), nil
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) >= 0, nil
+		}
+		var sval string
+		ptr := e.sVal.Load()
+		if ptr != nil {
+			sval = *ptr
+		} else {
+			sval = stringValue(e.Value)
+			e.sVal.Store(&sval)
+		}
 		return strings.Compare(f.String(), sval) >= 0, nil
 	default:
 		return false, nil
@@ -679,9 +702,10 @@ func (e GreaterThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool
 type LessThanExpression struct {
 	Field string
 	Value interface{}
+	sVal  atomic.Pointer[string]
 }
 
-func (e LessThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *LessThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -698,7 +722,17 @@ func (e LessThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	case reflect.Float32, reflect.Float64:
 		return less[float64](f.Float(), e.Value), nil
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) < 0, nil
+		}
+		var sval string
+		ptr := e.sVal.Load()
+		if ptr != nil {
+			sval = *ptr
+		} else {
+			sval = stringValue(e.Value)
+			e.sVal.Store(&sval)
+		}
 		return strings.Compare(f.String(), sval) < 0, nil
 	default:
 		return false, nil
@@ -709,9 +743,10 @@ func (e LessThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 type LessThanOrEqualExpression struct {
 	Field string
 	Value interface{}
+	sVal  atomic.Pointer[string]
 }
 
-func (e LessThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *LessThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -728,7 +763,17 @@ func (e LessThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, e
 	case reflect.Float32, reflect.Float64:
 		return lessOrEqual[float64](f.Float(), e.Value), nil
 	case reflect.String:
-		sval := stringValue(e.Value)
+		if s, ok := e.Value.(string); ok {
+			return strings.Compare(f.String(), s) <= 0, nil
+		}
+		var sval string
+		ptr := e.sVal.Load()
+		if ptr != nil {
+			sval = *ptr
+		} else {
+			sval = stringValue(e.Value)
+			e.sVal.Store(&sval)
+		}
 		return strings.Compare(f.String(), sval) <= 0, nil
 	default:
 		return false, nil
