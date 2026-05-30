@@ -13,7 +13,7 @@ import (
 
 type trueExpression struct{}
 
-func (e trueExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e trueExpression) Evaluate(_ interface{}, _ ...any) (bool, error) {
 	return true, nil
 }
 

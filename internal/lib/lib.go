@@ -136,8 +136,8 @@ func processJSONL(r io.Reader, q evaluator.Query) error {
 	return nil
 }
 
-// JsonTest evaluates a JSON document against the expression.
-func JsonTest(expr string, files ...string) {
+// JSONTest evaluates a JSON document against the expression.
+func JSONTest(expr string, files ...string) {
 	if expr == "" {
 		log.Fatal("-e expression required")
 	}

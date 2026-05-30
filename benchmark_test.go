@@ -14,7 +14,7 @@ func BenchmarkGreaterThanString_ValueString(b *testing.B) {
 	expr := &GreaterThanExpression{Field: "Name", Value: "bob"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		expr.Evaluate(u)
+		_, _ = expr.Evaluate(u)
 	}
 }
 
@@ -23,7 +23,7 @@ func BenchmarkGreaterThanString_ValueInt(b *testing.B) {
 	expr := &GreaterThanExpression{Field: "Name", Value: 100}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		expr.Evaluate(u)
+		_, _ = expr.Evaluate(u)
 	}
 }
 
@@ -32,7 +32,7 @@ func BenchmarkGreaterThanOrEqualString_ValueInt(b *testing.B) {
 	expr := &GreaterThanOrEqualExpression{Field: "Name", Value: 100}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		expr.Evaluate(u)
+		_, _ = expr.Evaluate(u)
 	}
 }
 
@@ -41,6 +41,6 @@ func BenchmarkLessThanString_ValueInt(b *testing.B) {
 	expr := &LessThanExpression{Field: "Name", Value: 100}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		expr.Evaluate(u)
+		_, _ = expr.Evaluate(u)
 	}
 }

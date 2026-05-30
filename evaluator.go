@@ -300,7 +300,7 @@ type Field struct {
 	Name string
 }
 
-func (f Field) Evaluate(i interface{}, opts ...any) (interface{}, error) {
+func (f Field) Evaluate(i interface{}, _ ...any) (interface{}, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return nil, fmt.Errorf("cannot dereference value")
@@ -320,14 +320,14 @@ type Constant struct {
 	Value interface{}
 }
 
-func (c Constant) Evaluate(i interface{}, opts ...any) (interface{}, error) {
+func (c Constant) Evaluate(_ interface{}, _ ...any) (interface{}, error) {
 	return c.Value, nil
 }
 
 // Self represents the input value itself.
 type Self struct{}
 
-func (s Self) Evaluate(i interface{}, opts ...any) (interface{}, error) {
+func (s Self) Evaluate(i interface{}, _ ...any) (interface{}, error) {
 	return i, nil
 }
 
@@ -465,7 +465,7 @@ type ContainsExpression struct {
 	Value interface{}
 }
 
-func (e ContainsExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e ContainsExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -502,7 +502,7 @@ type IContainsExpression struct {
 	Value interface{}
 }
 
-func (e IContainsExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e IContainsExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -524,7 +524,7 @@ type IsNotExpression struct {
 	Value interface{}
 }
 
-func (e IsNotExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e IsNotExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -542,7 +542,7 @@ type IsExpression struct {
 	Value interface{}
 }
 
-func (e IsExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e IsExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -622,7 +622,7 @@ type GreaterThanExpression struct {
 	sVal  atomic.Pointer[string]
 }
 
-func (e *GreaterThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *GreaterThanExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -664,7 +664,7 @@ type GreaterThanOrEqualExpression struct {
 	sVal  atomic.Pointer[string]
 }
 
-func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *GreaterThanOrEqualExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -705,7 +705,7 @@ type LessThanExpression struct {
 	sVal  atomic.Pointer[string]
 }
 
-func (e *LessThanExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *LessThanExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -746,7 +746,7 @@ type LessThanOrEqualExpression struct {
 	sVal  atomic.Pointer[string]
 }
 
-func (e *LessThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, error) {
+func (e *LessThanOrEqualExpression) Evaluate(i interface{}, _ ...any) (bool, error) {
 	v, ok := derefValue(i)
 	if !ok {
 		return false, nil
@@ -780,11 +780,11 @@ func (e *LessThanOrEqualExpression) Evaluate(i interface{}, opts ...any) (bool, 
 	}
 }
 
-// QueryRaw is the JSON representation of a query. ExpressionRawJson stores the
+// QueryRaw is the JSON representation of a query. ExpressionRawJSON stores the
 // raw JSON for the underlying expression and is resolved during unmarshalling.
 type QueryRaw struct {
 	Expression        Expression      `json:"-"`
-	ExpressionRawJson json.RawMessage `json:"Expression"`
+	ExpressionRawJSON json.RawMessage `json:"Expression"`
 }
 
 // Query wraps QueryRaw and provides evaluation and JSON unmarshalling helpers.
@@ -952,10 +952,10 @@ func (q *Query) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, (*QueryRaw)(q)); err != nil {
 		return err
 	}
-	if len(q.ExpressionRawJson) == 0 {
+	if len(q.ExpressionRawJSON) == 0 {
 		return nil
 	}
-	expr, err := unmarshalExpression(q.ExpressionRawJson)
+	expr, err := unmarshalExpression(q.ExpressionRawJSON)
 	if err != nil {
 		return err
 	}
@@ -969,7 +969,7 @@ func (q Query) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		return json.Marshal(&QueryRaw{ExpressionRawJson: data})
+		return json.Marshal(&QueryRaw{ExpressionRawJSON: data})
 	}
-	return json.Marshal(&QueryRaw{ExpressionRawJson: q.ExpressionRawJson})
+	return json.Marshal(&QueryRaw{ExpressionRawJSON: q.ExpressionRawJSON})
 }

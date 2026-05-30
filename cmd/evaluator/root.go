@@ -78,21 +78,21 @@ func NewRoot(name, version, commit, date string) (*RootCmd, error) {
 	c.Commands["jsontest"] = c.NewJsontest()
 	c.Commands["yamltest"] = c.NewYamltest()
 	c.Commands["help"] = &InternalCommand{
-		Exec: func(args []string) error {
+		Exec: func(_ []string) error {
 			c.Usage()
 			return nil
 		},
 		UsageFunc: c.Usage,
 	}
 	c.Commands["usage"] = &InternalCommand{
-		Exec: func(args []string) error {
+		Exec: func(_ []string) error {
 			c.Usage()
 			return nil
 		},
 		UsageFunc: c.Usage,
 	}
 	c.Commands["version"] = &InternalCommand{
-		Exec: func(args []string) error {
+		Exec: func(_ []string) error {
 			fmt.Printf("Version: %s\nCommit: %s\nDate: %s\n", c.Version, c.Commit, c.Date)
 			return nil
 		},
