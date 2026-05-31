@@ -46,7 +46,7 @@ func (c *Jsontest) Execute(args []string) error {
 		c.files = varArgs
 	}
 
-	JsonTest(c.expr, c.files...)
+	JSONTest(c.expr, c.files...)
 
 	return nil
 }

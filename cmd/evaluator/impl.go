@@ -22,13 +22,13 @@ func JsonlFilter(expr string, files ...string) {
 	lib.JsonlFilter(expr, files...)
 }
 
-// JsonTest is a subcommand `evaluator jsontest`
+// JSONTest is a subcommand `evaluator jsontest`
 // Flags:
 //
 //	expr: -e Expression
 //	files: ... Files
-func JsonTest(expr string, files ...string) {
-	lib.JsonTest(expr, files...)
+func JSONTest(expr string, files ...string) {
+	lib.JSONTest(expr, files...)
 }
 
 // YamlTest is a subcommand `evaluator yamltest`

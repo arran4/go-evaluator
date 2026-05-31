@@ -22,14 +22,28 @@ To use the library in your Go project:
 go get github.com/arran4/go-evaluator
 ```
 
-To install the command-line tools:
+To install the command-line tools, you can use one of the following methods:
 
+### GitHub Releases
+Download binaries from: https://github.com/arran4/go-evaluator/releases
+
+### Homebrew
+```bash
+brew tap arran4/homebrew-tap
+brew install csvfilter jsonlfilter jsontest yamltest
+```
+
+### Go install
 ```bash
 go install github.com/arran4/go-evaluator/cmd/csvfilter@latest
 go install github.com/arran4/go-evaluator/cmd/jsonlfilter@latest
 go install github.com/arran4/go-evaluator/cmd/jsontest@latest
 go install github.com/arran4/go-evaluator/cmd/yamltest@latest
 ```
+
+### Native packages
+- Debian/Ubuntu (`.deb`): see Releases assets
+- RPM (`.rpm`): see Releases assets
 
 ## Features
 
