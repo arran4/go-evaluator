@@ -62,9 +62,15 @@ func BenchmarkProcessCSV(b *testing.B) {
 
 func TestEvaluateJSON(t *testing.T) {
 	input := `{"name": "alice", "age": 30}`
-	q, _ := simple.Parse(`name is "alice"`)
+	q, err := simple.Parse(`name is "alice"`)
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
 	r := bytes.NewReader([]byte(input))
 	val, err := evaluateJSON(r, q)
+	if err != nil {
+		t.Fatalf("evaluateJSON error: %v", err)
+	}
 	if err != nil {
 		t.Fatalf("evaluateJSON error: %v", err)
 	}
@@ -76,7 +82,10 @@ func TestEvaluateJSON(t *testing.T) {
 func TestEvaluateYAML(t *testing.T) {
 	input := `name: alice
 age: 30`
-	q, _ := simple.Parse(`name is "alice"`)
+	q, err := simple.Parse(`name is "alice"`)
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
 	r := bytes.NewReader([]byte(input))
 	val, err := evaluateYAML(r, q)
 	if err != nil {
@@ -90,9 +99,12 @@ age: 30`
 func TestProcessJSONL(t *testing.T) {
 	input := `{"name": "alice", "age": 30}
 {"name": "bob", "age": 25}`
-	q, _ := simple.Parse(`age > 28`)
+	q, err := simple.Parse(`age > 28`)
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
 	r := bytes.NewReader([]byte(input))
-	err := processJSONL(r, q)
+	err = processJSONL(r, q)
 	if err != nil {
 		t.Fatalf("processJSONL error: %v", err)
 	}
@@ -101,9 +113,12 @@ func TestProcessJSONL(t *testing.T) {
 func TestProcessJSONLEOF(t *testing.T) {
 	input := `{"name": "alice", "age": 30}
 `
-	q, _ := simple.Parse(`age > 28`)
+	q, err := simple.Parse(`age > 28`)
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
 	r := bytes.NewReader([]byte(input))
-	err := processJSONL(r, q)
+	err = processJSONL(r, q)
 	if err != nil {
 		t.Fatalf("processJSONL error: %v", err)
 	}

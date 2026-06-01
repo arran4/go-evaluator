@@ -57,6 +57,8 @@ func TestParserErrors(t *testing.T) {
 		`(Name is "bob"`,
 		`"bob" is Name`, // this might work or fail
 		``,
+		`(Name is "bob"`, // missing )
+		`Name > `, // missing right side
 	}
 	for _, c := range cases {
 		_, err := Parse(c)
@@ -66,29 +68,7 @@ func TestParserErrors(t *testing.T) {
 	}
 }
 
-func TestStringifyCoverage(t *testing.T) {
-	exprs := []string{
-		`Name is "bob"`,
-		`Name >= 4`,
-		`Name > 4`,
-		`Name < 4`,
-		`Name <= 4`,
-
-	}
-	for _, e := range exprs {
-		q, err := Parse(e)
-		if err != nil {
-			t.Errorf("Parse error for %q: %v", e, err)
-			continue
-		}
-		s := Stringify(q)
-		if s == "" {
-			t.Errorf("Stringify empty for %q", e)
-		}
-	}
-}
-
-func TestStringifyAll(t *testing.T) {
+func TestStringify(t *testing.T) {
 	exprs := []string{
 		`Name >= 4`,
 		`Name > 4`,
@@ -129,19 +109,6 @@ func TestValToString(t *testing.T) {
 		s := valToString(c.val)
 		if s != c.expect {
 			t.Errorf("Expected %q, got %q", c.expect, s)
-		}
-	}
-}
-
-func TestParserErrors2(t *testing.T) {
-	cases := []string{
-		`(Name is "bob"`, // missing )
-		`Name > `, // missing right side
-	}
-	for _, c := range cases {
-		_, err := Parse(c)
-		if err == nil {
-			t.Errorf("Expected error for %q", c)
 		}
 	}
 }

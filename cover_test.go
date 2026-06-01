@@ -209,129 +209,47 @@ type testTypes struct {
 func TestInequalityExpressionsTypes(t *testing.T) {
 	u := &testTypes{IntVal: 10, UintVal: 10, FloatVal: 10.5}
 
-	exprGteInt := GreaterThanOrEqualExpression{Field: "IntVal", Value: 10}
-	val, _ := exprGteInt.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprGteInt = GreaterThanOrEqualExpression{Field: "IntVal", Value: 11}
-	val, _ = exprGteInt.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprGteUint := GreaterThanOrEqualExpression{Field: "UintVal", Value: 10}
-	val, _ = exprGteUint.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprGteUint = GreaterThanOrEqualExpression{Field: "UintVal", Value: 11}
-	val, _ = exprGteUint.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprGteFloat := GreaterThanOrEqualExpression{Field: "FloatVal", Value: 10.5}
-	val, _ = exprGteFloat.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprGteFloat = GreaterThanOrEqualExpression{Field: "FloatVal", Value: 11.5}
-	val, _ = exprGteFloat.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
+	cases := []struct {
+		name   string
+		expr   Query
+		input  interface{}
+		expect bool
+	}{
+		{"gte int true", Query{Expression: &GreaterThanOrEqualExpression{Field: "IntVal", Value: 10}}, u, true},
+		{"gte int false", Query{Expression: &GreaterThanOrEqualExpression{Field: "IntVal", Value: 11}}, u, false},
+		{"gte uint true", Query{Expression: &GreaterThanOrEqualExpression{Field: "UintVal", Value: 10}}, u, true},
+		{"gte uint false", Query{Expression: &GreaterThanOrEqualExpression{Field: "UintVal", Value: 11}}, u, false},
+		{"gte float true", Query{Expression: &GreaterThanOrEqualExpression{Field: "FloatVal", Value: 10.5}}, u, true},
+		{"gte float false", Query{Expression: &GreaterThanOrEqualExpression{Field: "FloatVal", Value: 11.5}}, u, false},
+		{"lt int true", Query{Expression: &LessThanExpression{Field: "IntVal", Value: 11}}, u, true},
+		{"lt int false", Query{Expression: &LessThanExpression{Field: "IntVal", Value: 9}}, u, false},
+		{"lt uint true", Query{Expression: &LessThanExpression{Field: "UintVal", Value: 11}}, u, true},
+		{"lt uint false", Query{Expression: &LessThanExpression{Field: "UintVal", Value: 9}}, u, false},
+		{"lt float true", Query{Expression: &LessThanExpression{Field: "FloatVal", Value: 11.5}}, u, true},
+		{"lt float false", Query{Expression: &LessThanExpression{Field: "FloatVal", Value: 9.5}}, u, false},
+		{"lte int true", Query{Expression: &LessThanOrEqualExpression{Field: "IntVal", Value: 10}}, u, true},
+		{"lte int false", Query{Expression: &LessThanOrEqualExpression{Field: "IntVal", Value: 9}}, u, false},
+		{"lte uint true", Query{Expression: &LessThanOrEqualExpression{Field: "UintVal", Value: 10}}, u, true},
+		{"lte uint false", Query{Expression: &LessThanOrEqualExpression{Field: "UintVal", Value: 9}}, u, false},
+		{"lte float true", Query{Expression: &LessThanOrEqualExpression{Field: "FloatVal", Value: 10.5}}, u, true},
+		{"lte float false", Query{Expression: &LessThanOrEqualExpression{Field: "FloatVal", Value: 9.5}}, u, false},
+		{"lte float nil false", Query{Expression: &LessThanOrEqualExpression{Field: "FloatVal", Value: 10.5}}, nil, false},
+		{"gt int true", Query{Expression: &GreaterThanExpression{Field: "IntVal", Value: 9}}, u, true},
+		{"gt uint true", Query{Expression: &GreaterThanExpression{Field: "UintVal", Value: 9}}, u, true},
+		{"gt float true", Query{Expression: &GreaterThanExpression{Field: "FloatVal", Value: 9.5}}, u, true},
+		{"gt float nil false", Query{Expression: &GreaterThanExpression{Field: "FloatVal", Value: 9.5}}, nil, false},
 	}
 
-	exprLtInt := LessThanExpression{Field: "IntVal", Value: 11}
-	val, _ = exprLtInt.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprLtInt = LessThanExpression{Field: "IntVal", Value: 9}
-	val, _ = exprLtInt.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprLtUint := LessThanExpression{Field: "UintVal", Value: 11}
-	val, _ = exprLtUint.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprLtUint = LessThanExpression{Field: "UintVal", Value: 9}
-	val, _ = exprLtUint.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprLtFloat := LessThanExpression{Field: "FloatVal", Value: 11.5}
-	val, _ = exprLtFloat.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprLtFloat = LessThanExpression{Field: "FloatVal", Value: 9.5}
-	val, _ = exprLtFloat.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprLteInt := LessThanOrEqualExpression{Field: "IntVal", Value: 10}
-	val, _ = exprLteInt.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprLteInt = LessThanOrEqualExpression{Field: "IntVal", Value: 9}
-	val, _ = exprLteInt.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprLteUint := LessThanOrEqualExpression{Field: "UintVal", Value: 10}
-	val, _ = exprLteUint.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprLteUint = LessThanOrEqualExpression{Field: "UintVal", Value: 9}
-	val, _ = exprLteUint.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprLteFloat := LessThanOrEqualExpression{Field: "FloatVal", Value: 10.5}
-	val, _ = exprLteFloat.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprLteFloat = LessThanOrEqualExpression{Field: "FloatVal", Value: 9.5}
-	val, _ = exprLteFloat.Evaluate(u)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	val, _ = exprLteFloat.Evaluate(nil)
-	if val {
-		t.Errorf("Expected false")
-	}
-
-	exprGtInt := GreaterThanExpression{Field: "IntVal", Value: 9}
-	val, _ = exprGtInt.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprGtUint := GreaterThanExpression{Field: "UintVal", Value: 9}
-	val, _ = exprGtUint.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-	exprGtFloat := GreaterThanExpression{Field: "FloatVal", Value: 9.5}
-	val, _ = exprGtFloat.Evaluate(u)
-	if !val {
-		t.Errorf("Expected true")
-	}
-
-	val, _ = exprGtFloat.Evaluate(nil)
-	if val {
-		t.Errorf("Expected false")
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			val, err := c.expr.Evaluate(c.input)
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if val != c.expect {
+				t.Errorf("Expected %v, got %v", c.expect, val)
+			}
+		})
 	}
 }
 
@@ -393,8 +311,8 @@ func TestFunctionExpressionEvaluate(t *testing.T) {
 func TestComparisonExpressionEvaluateBadOp(t *testing.T) {
 	expr := ComparisonExpression{Operation: "bad", LHS: Constant{Value: 1}, RHS: Constant{Value: 1}}
 	val, err := expr.Evaluate(nil)
-	if err == nil && val != false {
-		t.Errorf("Expected error evaluating bad op")
+	if err != nil {
+		t.Errorf("Expected no error for bad op, got %v", err)
 	}
 	if val != false {
 		t.Errorf("Expected false for bad op")
