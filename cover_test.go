@@ -365,84 +365,67 @@ func TestComparisonExpressionEvaluateContains(t *testing.T) {
 func TestComparisonExpressionEvaluateStrings(t *testing.T) {
 	u := &testUser{Name: "bob"}
 
-	exprGt := GreaterThanExpression{Field: "Name", Value: "alice"}
-	val, _ := exprGt.Evaluate(u)
-	if !val { t.Errorf("Expected true for gt") }
+	cases := []struct {
+		name   string
+		expr   Query
+		input  interface{}
+		expect bool
+	}{
+		{"gt true", Query{Expression: &GreaterThanExpression{Field: "Name", Value: "alice"}}, u, true},
+		{"gte true", Query{Expression: &GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}}, u, true},
+		{"lt true", Query{Expression: &LessThanExpression{Field: "Name", Value: "charlie"}}, u, true},
+		{"lte true", Query{Expression: &LessThanOrEqualExpression{Field: "Name", Value: "bob"}}, u, true},
+		{"gte false", Query{Expression: &GreaterThanOrEqualExpression{Field: "Name", Value: "charlie"}}, u, false},
+		{"lt false", Query{Expression: &LessThanExpression{Field: "Name", Value: "alice"}}, u, false},
+		{"lte false", Query{Expression: &LessThanOrEqualExpression{Field: "Name", Value: "alice"}}, u, false},
+		{"gte nil false", Query{Expression: &GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}}, nil, false},
+		{"lt nil false", Query{Expression: &LessThanExpression{Field: "Name", Value: "charlie"}}, nil, false},
+	}
 
-	exprGte := GreaterThanOrEqualExpression{Field: "Name", Value: "bob"}
-	val, _ = exprGte.Evaluate(u)
-	if !val { t.Errorf("Expected true for gte") }
-
-	exprLt := LessThanExpression{Field: "Name", Value: "charlie"}
-	val, _ = exprLt.Evaluate(u)
-	if !val { t.Errorf("Expected true for lt") }
-
-	exprLte := LessThanOrEqualExpression{Field: "Name", Value: "bob"}
-	val, _ = exprLte.Evaluate(u)
-	if !val { t.Errorf("Expected true for lte") }
-
-	exprGteFalse := GreaterThanOrEqualExpression{Field: "Name", Value: "charlie"}
-	val, _ = exprGteFalse.Evaluate(u)
-	if val { t.Errorf("Expected false for gte") }
-
-	exprLtFalse := LessThanExpression{Field: "Name", Value: "alice"}
-	val, _ = exprLtFalse.Evaluate(u)
-	if val { t.Errorf("Expected false for lt") }
-
-	exprLteFalse := LessThanOrEqualExpression{Field: "Name", Value: "alice"}
-	val, _ = exprLteFalse.Evaluate(u)
-	if val { t.Errorf("Expected false for lte") }
-
-	val, _ = exprGte.Evaluate(nil)
-	if val { t.Errorf("Expected false for nil") }
-	val, _ = exprLt.Evaluate(nil)
-	if val { t.Errorf("Expected false for nil") }
-}
-
-func TestComparisonExpressionEvaluateStringsNeq(t *testing.T) {
-	u := &testUser{Name: "bob"}
-
-	exprNeq := ComparisonExpression{Operation: "neq", LHS: Field{Name: "Name"}, RHS: Constant{Value: "alice"}}
-	val, _ := exprNeq.Evaluate(u)
-	if !val { t.Errorf("Expected true for neq") }
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			val, err := c.expr.Evaluate(c.input)
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if val != c.expect {
+				t.Errorf("Expected %v, got %v", c.expect, val)
+			}
+		})
+	}
 }
 
 func TestComparisonExpressionEvaluateStringsCompare(t *testing.T) {
 	u := &testUser{Name: "bob"}
 
-	exprGt := ComparisonExpression{Operation: "gt", LHS: Field{Name: "Name"}, RHS: Constant{Value: "alice"}}
-	val, _ := exprGt.Evaluate(u)
-	if !val { t.Errorf("Expected true for gt string") }
+	cases := []struct {
+		name   string
+		op     string
+		field  string
+		value  string
+		expect bool
+	}{
+		{"neq true", "neq", "Name", "alice", true},
+		{"gt true", "gt", "Name", "alice", true},
+		{"gte true", "gte", "Name", "bob", true},
+		{"lt true", "lt", "Name", "charlie", true},
+		{"lte true", "lte", "Name", "bob", true},
+		{"gt false", "gt", "Name", "charlie", false},
+		{"gte false", "gte", "Name", "charlie", false},
+		{"lt false", "lt", "Name", "alice", false},
+		{"lte false", "lte", "Name", "alice", false},
+	}
 
-	exprGte := ComparisonExpression{Operation: "gte", LHS: Field{Name: "Name"}, RHS: Constant{Value: "bob"}}
-	val, _ = exprGte.Evaluate(u)
-	if !val { t.Errorf("Expected true for gte string") }
-
-	exprLt := ComparisonExpression{Operation: "lt", LHS: Field{Name: "Name"}, RHS: Constant{Value: "charlie"}}
-	val, _ = exprLt.Evaluate(u)
-	if !val { t.Errorf("Expected true for lt string") }
-
-	exprLte := ComparisonExpression{Operation: "lte", LHS: Field{Name: "Name"}, RHS: Constant{Value: "bob"}}
-	val, _ = exprLte.Evaluate(u)
-	if !val { t.Errorf("Expected true for lte string") }
-}
-
-func TestComparisonExpressionEvaluateStringsCompareFailures(t *testing.T) {
-	u := &testUser{Name: "bob"}
-
-	exprGt := ComparisonExpression{Operation: "gt", LHS: Field{Name: "Name"}, RHS: Constant{Value: "charlie"}}
-	val, _ := exprGt.Evaluate(u)
-	if val { t.Errorf("Expected false for gt string") }
-
-	exprGte := ComparisonExpression{Operation: "gte", LHS: Field{Name: "Name"}, RHS: Constant{Value: "charlie"}}
-	val, _ = exprGte.Evaluate(u)
-	if val { t.Errorf("Expected false for gte string") }
-
-	exprLt := ComparisonExpression{Operation: "lt", LHS: Field{Name: "Name"}, RHS: Constant{Value: "alice"}}
-	val, _ = exprLt.Evaluate(u)
-	if val { t.Errorf("Expected false for lt string") }
-
-	exprLte := ComparisonExpression{Operation: "lte", LHS: Field{Name: "Name"}, RHS: Constant{Value: "alice"}}
-	val, _ = exprLte.Evaluate(u)
-	if val { t.Errorf("Expected false for lte string") }
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			expr := ComparisonExpression{Operation: c.op, LHS: Field{Name: c.field}, RHS: Constant{Value: c.value}}
+			val, err := expr.Evaluate(u)
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if val != c.expect {
+				t.Errorf("Expected %v, got %v", c.expect, val)
+			}
+		})
+	}
 }
