@@ -20,13 +20,13 @@ builds:
 
 archives:
   - id: csvfilter
-    ids: [csvfilter]
+    builds: [csvfilter]
   - id: jsonlfilter
-    ids: [jsonlfilter]
+    builds: [jsonlfilter]
   - id: jsontest
-    ids: [jsontest]
+    builds: [jsontest]
   - id: yamltest
-    ids: [yamltest]
+    builds: [yamltest]
 
 brews:
   - repository:

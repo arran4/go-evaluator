@@ -20,19 +20,13 @@ builds:
 
 archives:
   - id: csvfilter
-    ids: [csvfilter]
+    meta: true
   - id: jsonlfilter
-    ids: [jsonlfilter]
+    meta: true
   - id: jsontest
-    ids: [jsontest]
+    meta: true
   - id: yamltest
-    ids: [yamltest]
-
-brews:
-  - repository:
-      owner: arran4
-      name: homebrew-tap
-    ids: [csvfilter, jsonlfilter, jsontest, yamltest]
+    meta: true
 
 nfpms:
   - package_name: "{{ .ProjectName }}-{{ .Build.ID }}"

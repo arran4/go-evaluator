@@ -1,0 +1,1 @@
+sed -i 's/^archives:/archives:\n  - id: csvfilter\n    ids: [csvfilter]\n  - id: jsonlfilter\n    ids: [jsonlfilter]\n  - id: jsontest\n    ids: [jsontest]\n  - id: yamltest\n    ids: [yamltest]/' .goreleaser.yaml

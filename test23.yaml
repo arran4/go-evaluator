@@ -18,15 +18,14 @@ builds:
     main: ./cmd/yamltest
     binary: yamltest
 
-archives:
-  - id: csvfilter
-    ids: [csvfilter]
+- id: csvfilter
   - id: jsonlfilter
-    ids: [jsonlfilter]
   - id: jsontest
-    ids: [jsontest]
   - id: yamltest
-    ids: [yamltest]
+  - id: csvfilter
+  - id: jsonlfilter
+  - id: jsontest
+  - id: yamltest
 
 brews:
   - repository:

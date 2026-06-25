@@ -28,12 +28,6 @@ archives:
   - id: yamltest
     ids: [yamltest]
 
-brews:
-  - repository:
-      owner: arran4
-      name: homebrew-tap
-    ids: [csvfilter, jsonlfilter, jsontest, yamltest]
-
 nfpms:
   - package_name: "{{ .ProjectName }}-{{ .Build.ID }}"
     formats: [deb, rpm]
